@@ -1,4 +1,4 @@
-cmake_minimum_required(VERSION 3.25)
+cmake_minimum_required(VERSION 3.10)
 
 set(CMAKE_SKIP_RPATH ON)
 
@@ -36,7 +36,7 @@ set_target_properties(lsfg-vk PROPERTIES
 target_include_directories(lsfg-vk
     PRIVATE include)
 target_link_libraries(lsfg-vk PRIVATE
-    pe-parse dxbc toml11 SPIRV-Headers
+    pe-parse dxbc toml11
     lsfg-vk-framegen)
 
 get_target_property(TOML11_INCLUDE_DIRS toml11 INTERFACE_INCLUDE_DIRECTORIES)

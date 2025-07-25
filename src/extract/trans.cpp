@@ -1,6 +1,6 @@
 #include "extract/trans.hpp"
 
-#include <spirv/unified1/spirv.hpp>
+#include <thirdparty/spirv.hpp>
 
 #include <dxbc_modinfo.h>
 #include <dxbc_module.h>
