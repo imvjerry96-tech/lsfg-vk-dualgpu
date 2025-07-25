@@ -13,7 +13,7 @@ mkdir -pv alpm
 envsubst < scripts/package/alpm.PKGINFO > alpm/.PKGINFO
 
 mkdir -pv alpm/usr/{bin,lib,share/vulkan/implicit_layer.d}
-cp -v bin/lsfg-vk-ui alpm/usr/bin/lsfg-vk
+cp -v bin/lsfg-vk-ui alpm/usr/bin/lsfg-vk-ui
 cp -v lib/liblsfg-vk.so alpm/usr/lib/liblsfg-vk.so
 cp -v share/vulkan/implicit_layer.d/VkLayer_LS_frame_generation.json alpm/usr/share/vulkan/implicit_layer.d/VkLayer_LS_frame_generation.json
 
