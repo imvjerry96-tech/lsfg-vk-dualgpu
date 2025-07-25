@@ -19,13 +19,14 @@ jobs:
       uses: actions/download-artifact@v4
       with:
         name: lsfg-vk_TEST
+        path: .
         github-token: ${{ secrets.GITHUB_TOKEN }}
         run-id: ${{ github.event.workflow_run.id }}
     - name: Package lsfg-vk for various distros
       run: |
         export VERSION=$(grep -oP ' VERSION\s+\K[\d.]+' CMakeLists.txt)
         chmod +x scripts/package/package.sh
-        ./scripts/package/package.sh
+        bash ./scripts/package/package.sh
     - name: Upload lsfg-vk for dpkg
       uses: actions/upload-artifact@v4
       with:

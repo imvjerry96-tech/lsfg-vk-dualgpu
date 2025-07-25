@@ -1,4 +1,4 @@
-#!/bin/sh
+#!/bin/bash
 if [ -z "$VERSION" ]; then
     echo "VERSION environment variable is not set."
     exit 1
@@ -41,8 +41,8 @@ envsubst < scripts/package/rpm.spec > rpm/lsfg-vk.spec
 
 mkdir -pv rpm/SOURCES
 cp -v bin/lsfg-vk-ui rpm/SOURCES
-cp lib/liblsfg-vk.so rpm/SOURCES
-cp share/vulkan/implicit_layer.d/VkLayer_LS_frame_generation.json rpm/SOURCES
+cp -v lib/liblsfg-vk.so rpm/SOURCES
+cp -v share/vulkan/implicit_layer.d/VkLayer_LS_frame_generation.json rpm/SOURCES
 
 rpmbuild -bb rpm/lsfg-vk.spec --define "_topdir $(pwd)/rpm"
 mv -v "rpm/RPMS/x86_64/lsfg-vk-$VERSION-1.x86_64.rpm" "lsfg-vk-$VERSION.x86_64.rpm"
