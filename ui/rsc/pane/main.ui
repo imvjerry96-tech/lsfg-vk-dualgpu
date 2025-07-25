@@ -39,10 +39,10 @@
             <property name="icon-name">folder-symbolic</property>
         </object>
         </child>
-        <!--General Properties: Preset name -->
+        <!--General Properties: Profile name -->
         <child>
-        <object class="LSPrefEntry" id="preset_name">
-            <property name="opt-name">Preset name</property>
+        <object class="LSPrefEntry" id="profile_name">
+            <property name="opt-name">Profile name</property>
             <property name="opt-subtitle">Command name used for automatically activating in games.</property>
             <property name="icon-name">search-symbolic</property>
         </object>

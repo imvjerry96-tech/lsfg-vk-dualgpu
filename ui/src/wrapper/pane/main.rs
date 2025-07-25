@@ -9,7 +9,7 @@ pub struct PaneMain {
     #[template_child]
     pub dll: TemplateChild<PrefEntry>,
     #[template_child]
-    pub preset_name: TemplateChild<PrefEntry>,
+    pub profile_name: TemplateChild<PrefEntry>,
     #[template_child]
     pub multiplier: TemplateChild<PrefNumber>,
     #[template_child]

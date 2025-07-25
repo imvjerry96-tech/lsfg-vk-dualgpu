@@ -21,7 +21,7 @@ pub fn register_signals(sidebar_: &pane::PaneSidebar, main: pane::PaneMain) {
 
         // update main pane
         let main = main.imp();
-        let exe = main.preset_name.imp();
+        let exe = main.profile_name.imp();
         let multiplier = main.multiplier.imp();
         let flow_scale = main.flow_scale.imp();
         let performance_mode = main.performance_mode.imp();
