@@ -10,8 +10,8 @@ set -eux
 chmod 755 bin/lsfg-vk-ui
 chmod 755 lib/liblsfg-vk.so
 chmod 644 share/vulkan/implicit_layer.d/VkLayer_LS_frame_generation.json
-chmod 644 ui/rsc/gay.pancake.lsfg-vk-ui.desktop
-chmod 644 ui/rsc/icon.png
+chmod 644 share/applications/lsfg-vk-ui.desktop
+chmod 644 share/icons/hicolor/256x256/apps/gay.pancake.lsfg-vk-ui.png
 
 # build alpm package
 echo "Building ALPM package..."
@@ -23,8 +23,8 @@ mkdir -pv alpm/usr/{bin,lib,share/vulkan/implicit_layer.d,share/applications,sha
 cp -v bin/lsfg-vk-ui alpm/usr/bin/lsfg-vk-ui
 cp -v lib/liblsfg-vk.so alpm/usr/lib/liblsfg-vk.so
 cp -v share/vulkan/implicit_layer.d/VkLayer_LS_frame_generation.json \
-    alpm/usr/share/vulkan/implicit_layer.d/VkLayer_LS_frame_generation.jsonc
-cp -v share/applications/gay.pancake.lsfg-vk-ui.desktop \
+    alpm/usr/share/vulkan/implicit_layer.d/VkLayer_LS_frame_generation.json
+cp -v share/applications/lsfg-vk-ui.desktop \
     alpm/usr/share/applications/lsfg-vk-ui.desktop
 cp -v share/icons/hicolor/256x256/apps/gay.pancake.lsfg-vk-ui.png \
     alpm/usr/share/icons/hicolor/256x256/apps/gay.pancake.lsfg-vk-ui.png
@@ -43,7 +43,7 @@ cp -v bin/lsfg-vk-ui deb/usr/bin/lsfg-vk-ui
 cp -v lib/liblsfg-vk.so deb/usr/lib/liblsfg-vk.so
 cp -v share/vulkan/implicit_layer.d/VkLayer_LS_frame_generation.json \
     deb/usr/share/vulkan/implicit_layer.d/VkLayer_LS_frame_generation.json
-cp -v share/applications/gay.pancake.lsfg-vk-ui.desktop \
+cp -v share/applications/lsfg-vk-ui.desktop \
     deb/usr/share/applications/lsfg-vk-ui.desktop
 cp -v share/icons/hicolor/256x256/apps/gay.pancake.lsfg-vk-ui.png \
     deb/usr/share/icons/hicolor/256x256/apps/gay.pancake.lsfg-vk-ui.png
@@ -61,7 +61,7 @@ cp -v bin/lsfg-vk-ui rpm/SOURCES
 cp -v lib/liblsfg-vk.so rpm/SOURCES
 cp -v share/vulkan/implicit_layer.d/VkLayer_LS_frame_generation.json \
     rpm/SOURCES
-cp -v share/applications/gay.pancake.lsfg-vk-ui.desktop \
+cp -v share/applications/lsfg-vk-ui.desktop \
     rpm/SOURCES/lsfg-vk-ui.desktop
 cp -v share/icons/hicolor/256x256/apps/gay.pancake.lsfg-vk-ui.png \
     rpm/SOURCES/gay.pancake.lsfg-vk-ui.png

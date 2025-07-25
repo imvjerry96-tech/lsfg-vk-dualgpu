@@ -15,7 +15,7 @@ jobs:
     - name: Checkout repository
       uses: actions/checkout@v4
       with:
-        submodules: yes
+        submodules: true
     - name: Install build dependencies
       uses: awalsh128/cache-apt-pkgs-action@latest
       with:
@@ -54,8 +54,8 @@ jobs:
       run: |
         mkdir -p build-release/{bin,share/applications,share/icons/hicolor/256x256/apps}
         mv ui/lsfg-vk-ui.AppImage build-release/bin/lsfg-vk-ui
-        cp ui/rsc/gay.pancake.lsfg-vk-ui.desktop usr/share/applications/lsfg-vk-ui.desktop
-        cp ui/rsc/icon.png usr/share/icons/hicolor/256x256/apps/gay.pancake.lsfg-vk-ui.png
+        cp ui/rsc/gay.pancake.lsfg-vk-ui.desktop build-release/share/applications/lsfg-vk-ui.desktop
+        cp ui/rsc/icon.png build-release/share/icons/hicolor/256x256/apps/gay.pancake.lsfg-vk-ui.png
     # upload all files
     - name: Upload lsfg-vk artifact
       uses: actions/upload-artifact@v4
