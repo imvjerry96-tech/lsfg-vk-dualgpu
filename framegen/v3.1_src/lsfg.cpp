@@ -10,8 +10,10 @@
 #include "common/exception.hpp"
 #include "common/utils.hpp"
 
+#ifdef LSFGVK_EXCESS_DEBUG
 #include <renderdoc_app.h>
 #include <dlfcn.h>
+#endif // LSFGVK_EXCESS_DEBUG
 
 #include <cstdint>
 #include <optional>
@@ -30,7 +32,9 @@ namespace {
     std::optional<Vulkan> device;
     std::unordered_map<int32_t, Context> contexts;
 
+#ifdef LSFGVK_EXCESS_DEBUG
     std::optional<RENDERDOC_API_1_6_0*> renderdoc;
+#endif // LSFGVK_EXCESS_DEBUG
 }
 
 void LSFG_3_1::initialize(uint64_t deviceUUID,
@@ -58,6 +62,7 @@ void LSFG_3_1::initialize(uint64_t deviceUUID,
     std::srand(static_cast<uint32_t>(std::time(nullptr)));
 }
 
+#ifdef LSFGVK_EXCESS_DEBUG
 void LSFG_3_1::initializeRenderDoc() {
     if (renderdoc.has_value())
         return;
@@ -74,6 +79,7 @@ void LSFG_3_1::initializeRenderDoc() {
         throw LSFG::vulkan_error(VK_ERROR_INITIALIZATION_FAILED, "RenderDoc API not found");
     }
 }
+#endif // LSFGVK_EXCESS_DEBUG
 
 int32_t LSFG_3_1::createContext(
         int in0, int in1, const std::vector<int>& outN,
@@ -94,15 +100,19 @@ void LSFG_3_1::presentContext(int32_t id, int inSem, const std::vector<int>& out
     if (it == contexts.end())
         throw LSFG::vulkan_error(VK_ERROR_UNKNOWN, "Context not found");
 
+#ifdef LSFGVK_EXCESS_DEBUG
     if (renderdoc.has_value())
         (*renderdoc)->StartFrameCapture(RENDERDOC_DEVICEPOINTER_FROM_VKINSTANCE(instance->handle()), nullptr);
+#endif // LSFGVK_EXCESS_DEBUG
 
     it->second.present(*device, inSem, outSem);
 
+#ifdef LSFGVK_EXCESS_DEBUG
     if (renderdoc.has_value()) {
         vkDeviceWaitIdle(device->device.handle());
         (*renderdoc)->EndFrameCapture(RENDERDOC_DEVICEPOINTER_FROM_VKINSTANCE(instance->handle()), nullptr);
     }
+#endif // LSFGVK_EXCESS_DEBUG
 }
 
 void LSFG_3_1::deleteContext(int32_t id) {

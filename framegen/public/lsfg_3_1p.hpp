@@ -27,6 +27,7 @@ namespace LSFG_3_1P {
         bool forceDisableFp16,
         const std::function<std::vector<uint8_t>(const std::string&, bool)>& loader);
 
+#ifdef LSFGVK_EXCESS_DEBUG
     ///
     /// Initialize the renderdoc API.
     ///
@@ -34,6 +35,7 @@ namespace LSFG_3_1P {
     ///
     [[gnu::visibility("default")]]
     void initializeRenderDoc();
+#endif // LSFGVK_EXCESS_DEBUG
 
     ///
     /// Create a new LSFG context on a swapchain.
