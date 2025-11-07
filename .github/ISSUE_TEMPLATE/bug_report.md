@@ -10,9 +10,8 @@ assignees: ''
 **Describe the bug**
 A clear and concise description of what's happening is and, if not immediately obvious, what's supposed to happen instead.
 
-Before reporting, make sure you have read through these two wiki pages and tried all the options:
+Before reporting, make sure you have read through this wiki page:
 https://github.com/PancakeTAS/lsfg-vk/wiki/Quirks
-https://github.com/PancakeTAS/lsfg-vk/wiki/Known-incompatibilities
 
 Make sure this bug hasn't already been reported. Comment your findings on an existing issue if you find one!
 
