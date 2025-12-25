@@ -285,6 +285,10 @@ namespace {
         try {
             // retire old swapchain
             if (info->oldSwapchain) {
+                const auto& info_mapping = instance_info->swapchainInfos.find(info->oldSwapchain);
+                if (info_mapping != instance_info->swapchainInfos.end())
+                    instance_info->swapchainInfos.erase(info_mapping);
+
                 const auto& mapping = instance_info->swapchains.find(info->oldSwapchain);
                 if (mapping != instance_info->swapchains.end())
                     instance_info->swapchains.erase(mapping);
@@ -424,6 +428,10 @@ namespace {
         const auto& it = instance_info->devices.find(device);
         if (it == instance_info->devices.end())
             return;
+
+        const auto& info_mapping = instance_info->swapchainInfos.find(swapchain);
+        if (info_mapping != instance_info->swapchainInfos.end())
+            instance_info->swapchainInfos.erase(info_mapping);
 
         const auto& mapping = instance_info->swapchains.find(swapchain);
         if (mapping != instance_info->swapchains.end())
