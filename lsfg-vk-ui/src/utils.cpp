@@ -1,5 +1,6 @@
 /* SPDX-License-Identifier: GPL-3.0-or-later */
 
+#include <QtContainerFwd>
 #include <QStringList>
 #include <QString>
 
@@ -16,7 +17,7 @@
 using namespace lsfgvk;
 using namespace lsfgvk::ui;
 
-QStringList ui::getAvailableGPUs() { // NOLINT (IWYU)
+QStringList ui::getAvailableGPUs() {
     // list of found GPUs and their optional PCI IDs
     std::vector<std::pair<std::string, std::optional<std::string>>> gpus{};
 
@@ -33,16 +34,18 @@ QStringList ui::getAvailableGPUs() { // NOLINT (IWYU)
 
         const backend::Instance instance{picker, "/non/existent/path", false};
         throw std::runtime_error("???");
-    } catch (const backend::error&) { // NOLINT
+    } catch (const backend::error&) { // NOLINT (empty catch)
         // expected
     }
 
+    // NOLINTBEGIN (ranges) [GCC has some issues with ranges]
     // first remove 1:1 duplicates
-    std::sort(gpus.begin(), gpus.end());                           // NOLINT (ranges [thanks gcc!])
-    gpus.erase(std::unique(gpus.begin(), gpus.end()), gpus.end()); // NOLINT
+    std::sort(gpus.begin(), gpus.end());
+    gpus.erase(std::unique(gpus.begin(), gpus.end()), gpus.end());
+    // NOLINTEND
 
     // build the frontend list
-    QStringList list{"Default"}; // NOLINT (IWYU)
+    QStringList list{"Default"};
     for (const auto& gpu : gpus) {
         // check if GPU is in list more than once
         auto count = std::count_if(gpus.begin(), gpus.end(),

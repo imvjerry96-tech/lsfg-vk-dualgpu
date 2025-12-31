@@ -21,25 +21,24 @@ set(CMAKE_SKIP_RPATH ON)
 if(CMAKE_BUILD_TYPE STREQUAL "Debug")
     set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
 
-    if(NOT CMAKE_CXX_COMPILER_ID STREQUAL "Clang")
-        message(WARNING "Debug builds should use Clang for better diagnostics")
-    else()
-        message(STATUS "Building with further diagnostics")
+    if(CMAKE_CXX_COMPILER_ID STREQUAL "Clang")
+        message(STATUS "Building with clang-specific diagnostics")
 
-        set(CMAKE_CXX_CLANG_TIDY clang-tidy)
+        set(CMAKE_CXX_CLANG_TIDY clang-tidy) # See .clang-tidy files
 
         add_compile_options(
+            # By default, enable all warnings
             -Weverything
-            # disable incompatible warnings
+            # Some warnings are incompatible with each other
             -Wno-pre-c++20-compat-pedantic
             -Wno-c++98-compat-pedantic
             -Wno-switch-default
-            -Wno-switch-enum
-            # disable noisy warnings
+            # Then there's code-style things I don't care about
             -Wno-missing-designated-field-initializers
+            -Wno-shadow
+            # And functional warning I don't care about either
             -Wno-cast-function-type-strict
             -Wno-padded
-            -Wno-shadow
         )
     endif()
 endif()

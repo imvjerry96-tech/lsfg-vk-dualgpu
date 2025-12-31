@@ -9,6 +9,10 @@ target_link_libraries(lsfg-vk-layer
     PUBLIC lsfg-vk-common
     PUBLIC lsfg-vk-backend)
 
+target_compile_options(lsfg-vk-layer PRIVATE
+    -Wno-unknown-warning-option
+    -Wno-unsafe-buffer-usage) # Array indexing
+
 set_target_properties(lsfg-vk-layer PROPERTIES
     CXX_VISIBILITY_PRESET hidden)
 

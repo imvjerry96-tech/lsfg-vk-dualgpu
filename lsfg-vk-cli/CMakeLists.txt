@@ -12,7 +12,7 @@ target_link_libraries(lsfg-vk-cli
 
 target_compile_options(lsfg-vk-cli PRIVATE
     -Wno-unknown-warning-option
-    -Wno-unsafe-buffer-usage)
+    -Wno-unsafe-buffer-usage) # CLI parsing
 
 install(TARGETS lsfg-vk-cli
     RUNTIME DESTINATION "${CMAKE_INSTALL_BINDIR}")

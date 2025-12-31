@@ -12,7 +12,6 @@
 #include <cstddef>
 #include <cstdint>
 #include <cstdlib>
-#include <ctime>
 #include <exception>
 #include <filesystem>
 #include <iomanip>
@@ -22,6 +21,8 @@
 #include <utility>
 #include <vector>
 
+#include <time.h>
+#include <bits/time.h>
 #include <vulkan/vulkan_core.h>
 
 using namespace lsfgvk::cli;
@@ -31,7 +32,7 @@ namespace {
     // get current time in milliseconds
     uint64_t ms() {
         struct timespec ts{};
-        clock_gettime(CLOCK_MONOTONIC, &ts); // NOLINT (IWYU)
+        clock_gettime(CLOCK_MONOTONIC, &ts);
 
         return static_cast<uint64_t>(ts.tv_sec) * 1000ULL +
             static_cast<uint64_t>(ts.tv_nsec) / 1000000ULL;

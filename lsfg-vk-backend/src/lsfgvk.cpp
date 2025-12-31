@@ -547,7 +547,7 @@ ContextImpl::ContextImpl(const InstanceImpl& instance,
     cmdbuf.submit(ctx.vk); // wait for completion
 }
 
-void Instance::scheduleFrames(Context& context) { // NOLINT (static)
+void Instance::scheduleFrames(Context& context) {
 #ifdef LSFGVK_TESTING_RENDERDOC
     const auto& impl = this->m_impl;
     if (impl->getRenderDocAPI()) {
@@ -645,7 +645,7 @@ Instance::~Instance() = default;
 // leaking shenanigans
 
 namespace {
-    bool leaking{false}; // NOLINT
+    bool leaking{false}; // NOLINT (global variable)
 }
 
 InstanceImpl::~InstanceImpl() {

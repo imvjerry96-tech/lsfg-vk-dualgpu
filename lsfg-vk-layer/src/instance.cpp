@@ -18,6 +18,7 @@
 #include <utility>
 #include <vector>
 
+#include <stdlib.h>
 #include <vulkan/vulkan_core.h>
 
 using namespace lsfgvk;
@@ -172,7 +173,7 @@ void Root::createSwapchainContext(const vk::Vulkan& vk,
     if (!this->backend.has_value()) { // emplace backend late, due to loader bug
         const auto& global = this->config.get().global();
 
-        setenv("DISABLE_LSFGVK", "1", 1); // NOLINT (c++-include)
+        setenv("DISABLE_LSFGVK", "1", 1);
 
         try {
             std::string dll{};
@@ -197,11 +198,11 @@ void Root::createSwapchainContext(const vk::Vulkan& vk,
                 dll, global.allow_fp16
             );
         } catch (const std::exception& e) {
-            unsetenv("DISABLE_LSFGVK"); // NOLINT (c++-include)
+            unsetenv("DISABLE_LSFGVK");
             throw ls::error("failed to create backend instance", e);
         }
 
-        unsetenv("DISABLE_LSFGVK"); // NOLINT (c++-include)
+        unsetenv("DISABLE_LSFGVK");
     }
 
     this->swapchains.emplace(swapchain,

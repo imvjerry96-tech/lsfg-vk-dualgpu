@@ -21,24 +21,28 @@ namespace lsfgvk::backend {
     ///
     /// Primitive exception class that deliveres a detailed error message
     ///
-    class [[gnu::visibility("default")]] error : public std::runtime_error { // NOLINT
-        public:
-            ///
-            /// Construct an error
-            ///
-            /// @param msg Error message.
-            /// @param inner Inner exception.
-            ///
-            explicit error(const std::string& msg, const std::exception& inner);
+    class [[gnu::visibility("default")]] error : public std::runtime_error {
+    public:
+        ///
+        /// Construct an error
+        ///
+        /// @param msg Error message.
+        /// @param inner Inner exception.
+        ///
+        explicit error(const std::string &msg, const std::exception &inner);
 
-            ///
-            /// Construct an error
-            ///
-            /// @param msg Error message.
-            ///
-            explicit error(const std::string& msg);
+        ///
+        /// Construct an error
+        ///
+        /// @param msg Error message.
+        ///
+        explicit error(const std::string &msg);
 
-            ~error() override;
+        error(const error &) = default;
+        error &operator=(const error &) = default;
+        error(error &&) = default;
+        error &operator=(error &&) = default;
+        ~error() override;
     };
 
     /// Function type for picking a device based on its name and IDs

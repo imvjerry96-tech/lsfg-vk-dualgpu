@@ -1,39 +1,25 @@
 Checks:
-# enable basic checks
-- "clang-analyzer-*"
-# configure performance checks
-- "performance-*"
-- "-performance-enum-size"
-# configure readability and bugprone checks
-- "readability-*"
+# COMMON: Usually, we keep all checks enabled
 - "bugprone-*"
-- "misc-*"
-- "-readability-braces-around-statements"
-- "-readability-function-cognitive-complexity"
-- "-readability-identifier-length"
-- "-readability-implicit-bool-conversion"
-- "-readability-magic-numbers"
-- "-readability-math-missing-parentheses"
-- "-readability-named-parameter"
-- "-bugprone-easily-swappable-parameters"
-- "-misc-non-private-member-variables-in-classes"
-# configure modernization
-- "modernize-*"
-- "-modernize-use-trailing-return-type"
-- "-modernize-use-designated-initializers"
-# configure cppcoreguidelines
+- "clang-analyzer-*"
 - "cppcoreguidelines-*"
-- "-cppcoreguidelines-avoid-magic-numbers"
-- "-cppcoreguidelines-pro-type-reinterpret-cast"
-- "-cppcoreguidelines-macro-usage"
-- "-cppcoreguidelines-pro-bounds-pointer-arithmetic"
-# disable slow and pointless checks
-- "-modernize-use-std-numbers"
-- "-modernize-type-traits"
-- "-cppcoreguidelines-owning-memory"
-- "-cppcoreguidelines-macro-to-enum"
-- "-readability-container-contains"
-- "-bugprone-reserved-identifier"
-- "-bugprone-stringview-nullptr"
-- "-bugprone-standalone-empty"
-- "-misc-unused-using-decls"
+- "misc-*"
+- "modernize-*"
+- "performance-*"
+- "portability-*"
+- "readability-*"
+# COMMON: Some checks related purely to code-style are disabled
+- -modernize-use-designated-initializers
+- -modernize-use-trailing-return-type
+- -modernize-deprecated-headers
+- -readability-function-cognitive-complexity
+- -readability-math-missing-parentheses
+- -readability-braces-around-statements
+- -readability-implicit-bool-conversion
+- -readability-identifier-length
+- -readability-magic-numbers
+- -cppcoreguidelines-avoid-magic-numbers
+- -cppcoreguidelines-macro-usage
+- -bugprone-easily-swappable-parameters
+# Pointer arithmetic is used plenty for parsing cli arguments
+- -cppcoreguidelines-pro-bounds-pointer-arithmetic

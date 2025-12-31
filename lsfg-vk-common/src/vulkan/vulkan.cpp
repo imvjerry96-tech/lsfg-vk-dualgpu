@@ -24,7 +24,7 @@ using namespace vk;
 namespace {
     /// load libvulkan.so.1 and return its handle
     void* get_vulkan_handle() {
-        static void* handle{nullptr}; // NOLINT
+        static void* handle{nullptr}; // NOLINT (const correctness)
         if (handle) return handle;
 
         handle = dlopen("libvulkan.so.1", RTLD_NOW | RTLD_LOCAL);
@@ -37,7 +37,7 @@ namespace {
 
     /// get the main proc addr function
     PFN_vkGetInstanceProcAddr get_mpa() {
-        static PFN_vkGetInstanceProcAddr mpa{nullptr}; // NOLINT
+        static PFN_vkGetInstanceProcAddr mpa{nullptr};
         if (mpa) return mpa;
 
         mpa = reinterpret_cast<PFN_vkGetInstanceProcAddr>(

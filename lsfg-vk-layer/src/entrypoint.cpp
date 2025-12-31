@@ -28,7 +28,7 @@ namespace {
         PFN_vkGetInstanceProcAddr GetInstanceProcAddr;
 
         Root root;
-    }* layer_info;
+    }* layer_info; // NOLINT (global variable)
 
     // instance-wide info initialized at instance creation(s)
     struct InstanceInfo {
@@ -38,7 +38,7 @@ namespace {
         std::unordered_map<VkDevice, vk::Vulkan> devices;
         std::unordered_map<VkSwapchainKHR, ls::R<vk::Vulkan>> swapchains;
         std::unordered_map<VkSwapchainKHR, SwapchainInfo> swapchainInfos;
-    }* instance_info;
+    }* instance_info; // NOLINT (global variable)
 
     // create instance
     VkResult myvkCreateInstance(
@@ -93,7 +93,7 @@ namespace {
             );
 
             if (!instance_info)
-                instance_info = new InstanceInfo{
+                instance_info = new InstanceInfo{ // NOLINT (memory management)
                     .funcs = vk::initVulkanInstanceFuncs(*instance,
                         layer_info->GetInstanceProcAddr, true),
                 };
@@ -224,7 +224,7 @@ namespace {
 
         // destroy instance info if no handles remain
         if (instance_info->handles.empty()) {
-            delete instance_info;
+            delete instance_info; // NOLINT (memory management)
             instance_info = nullptr;
         }
 
@@ -379,7 +379,7 @@ namespace {
 
         // present each swapchain
         for (size_t i = 0; i < info->swapchainCount; i++) {
-            const auto& swapchain = info->pSwapchains[i]; // NOLINT (array index)
+            const auto& swapchain = info->pSwapchains[i];
 
             const auto& it = instance_info->swapchains.find(swapchain);
             if (it == instance_info->swapchains.end())
@@ -390,13 +390,13 @@ namespace {
                 waitSemaphores.reserve(info->waitSemaphoreCount);
 
                 for (size_t j = 0; j < info->waitSemaphoreCount; j++)
-                    waitSemaphores.push_back(info->pWaitSemaphores[j]); // NOLINT (array index)
+                    waitSemaphores.push_back(info->pWaitSemaphores[j]);
 
                 auto& context = layer_info->root.getSwapchainContext(swapchain);
                 result = context.present(it->second,
                     queue, swapchain,
                     const_cast<void*>(info->pNext),
-                    info->pImageIndices[i], // NOLINT (array index)
+                    info->pImageIndices[i],
                     { waitSemaphores.begin(), waitSemaphores.end() }
                 );
             } catch (const ls::vulkan_error& e) {
@@ -413,7 +413,7 @@ namespace {
             }
 
             if (result != VK_SUCCESS && info->pResults)
-                info->pResults[i] = result; // NOLINT (array index)
+                info->pResults[i] = result;
         }
 
         return result;
@@ -463,7 +463,7 @@ VkResult vkNegotiateLoaderLayerInterfaceVersion(VkNegotiateLayerInterface* pVers
 
     // load the layer configuration
     try {
-        layer_info = new LayerInfo {
+        layer_info = new LayerInfo { // NOLINT (memory management)
             .map = {
 #define VKPTR(name) reinterpret_cast<PFN_vkVoidFunction>(name)
                 { "vkCreateInstance", VKPTR(myvkCreateInstance) },
@@ -479,7 +479,7 @@ VkResult vkNegotiateLoaderLayerInterfaceVersion(VkNegotiateLayerInterface* pVers
         };
 
         if (!layer_info->root.active()) { // skip inactive
-            delete layer_info;
+            delete layer_info; // NOLINT (memory management)
             layer_info = nullptr;
 
             return VK_ERROR_INITIALIZATION_FAILED;

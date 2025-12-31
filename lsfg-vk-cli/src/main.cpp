@@ -11,7 +11,7 @@
 #include <optional>
 #include <string>
 
-#include <getopt.h> // NOLINT
+#include <getopt.h> // NOLINT (IWYU)
 #include <bits/getopt_core.h>
 #include <bits/getopt_ext.h>
 

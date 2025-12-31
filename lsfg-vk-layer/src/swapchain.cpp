@@ -151,7 +151,7 @@ VkResult Swapchain::present(const vk::Vulkan& vk,
         while (info) {
             if (info->sType == VK_STRUCTURE_TYPE_SWAPCHAIN_PRESENT_MODE_INFO_EXT) {
                 for (size_t i = 0; i < info->swapchainCount; i++)
-                    const_cast<VkPresentModeKHR*>(info->pPresentModes)[i] = // NOLINT
+                    const_cast<VkPresentModeKHR*>(info->pPresentModes)[i] =
                         VK_PRESENT_MODE_FIFO_KHR;
             }
 

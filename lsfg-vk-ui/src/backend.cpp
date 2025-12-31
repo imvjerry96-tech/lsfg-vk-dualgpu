@@ -38,7 +38,7 @@ Backend::Backend() {
     this->m_gpu_list = ui::getAvailableGPUs();
 
     // create profile list model
-    QStringList profiles; // NOLINT (IWYU)
+    QStringList profiles;
     for (const auto& profile : this->m_profiles)
         profiles.append(QString::fromStdString(profile.name));
 
@@ -47,7 +47,7 @@ Backend::Backend() {
     // create active_in list models
     this->m_active_in_list_models.reserve(this->m_profiles.size());
     for (const auto& profile : this->m_profiles) {
-        QStringList active_in; // NOLINT (IWYU)
+        QStringList active_in;
         for (const auto& path : profile.active_in)
             active_in.append(QString::fromStdString(path));
 
