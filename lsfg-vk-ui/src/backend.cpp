@@ -6,6 +6,7 @@
 
 #include "backend.hpp"
 #include "utils.hpp"
+#include "lsfg-vk-common/helpers/errors.hpp"
 #include "lsfg-vk-common/configuration/config.hpp"
 
 #include <chrono>
@@ -71,6 +72,9 @@ Backend::Backend() {
             config.profiles() = this->m_profiles;
 
             try {
+                std::filesystem::create_directories(path.parent_path());
+                if (!std::filesystem::exists(path.parent_path()))
+                    throw ls::error("unable to create configuration directory");
                 config.write(path);
             } catch (const std::exception& e) {
                 std::cerr << "unable to write configuration:\n- " << e.what() << "\n";
