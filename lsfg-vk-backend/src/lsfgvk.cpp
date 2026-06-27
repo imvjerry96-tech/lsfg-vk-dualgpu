@@ -369,8 +369,7 @@ namespace {
             for (size_t i = 0; i < count; ++i)
                 constantBuffers.emplace_back(vk,
                     backend::getDefaultConstantBuffer(
-                        i, count,
-                        hdr, flow
+                        i, count, hdr
                     )
                 );
 
@@ -378,7 +377,7 @@ namespace {
                 .vk = std::ref(vk),
                 .shaders = std::ref(shaders),
                 .pool{vk, backend::calculateDescriptorPoolLimits(count, perf)},
-                .constantBuffer{vk, backend::getDefaultConstantBuffer(0, 1, hdr, flow)},
+                .constantBuffer{vk, backend::getDefaultConstantBuffer(0, 1, flow)},
                 .constantBuffers{std::move(constantBuffers)},
                 .bnbSampler{vk, VK_SAMPLER_ADDRESS_MODE_CLAMP_TO_BORDER, VK_COMPARE_OP_NEVER, false},
                 .bnwSampler{vk, VK_SAMPLER_ADDRESS_MODE_CLAMP_TO_BORDER, VK_COMPARE_OP_NEVER, true},

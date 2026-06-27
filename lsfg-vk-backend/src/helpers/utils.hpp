@@ -56,12 +56,10 @@ namespace lsfgvk::backend {
     /// get a prefilled constant buffer
     /// @param index timestamp index
     /// @param total total amount of images
-    /// @param hdr whether HDR is enabled
     /// @param invFlow inverted flow scale value
     /// @return prefilled constant buffer
     ConstantBuffer getDefaultConstantBuffer(
-        size_t index, size_t total,
-        bool hdr, float invFlow
+        size_t index, size_t total, float invFlow
     );
 
     /// round down a VkExtent2D
