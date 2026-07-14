@@ -13,7 +13,7 @@
 
 #include <vulkan/vulkan_core.h>
 
-using namespace lsfgvk::backend;
+using namespace vkbp::backend;
 
 Generate::Generate(const Ctx& ctx, size_t idx,
         const std::pair<vk::Image, vk::Image>& sourceImages,

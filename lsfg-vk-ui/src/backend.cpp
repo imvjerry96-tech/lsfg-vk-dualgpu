@@ -15,8 +15,8 @@
 #include <iostream>
 #include <thread>
 
-using namespace lsfgvk;
-using namespace lsfgvk::ui;
+using namespace vkbp;
+using namespace vkbp::ui;
 
 Backend::Backend() {
     // load configuration

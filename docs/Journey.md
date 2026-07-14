@@ -1,5 +1,5 @@
-# The Journey of lsfg-vk
-Welcome to the journey of lsfg-vk, this is where I, the developer, PancakeTAS, share interesting stories about the development process and the challenges faced along the way.
+# The Journey of vkb-vk
+Welcome to the journey of vkb-vk, this is where I, the developer, PancakeTAS, share interesting stories about the development process and the challenges faced along the way.
 
 ---
 
@@ -7,8 +7,8 @@ Welcome to the journey of lsfg-vk, this is where I, the developer, PancakeTAS, s
 This document details the process of getting LSFG to work in a native Vulkan environment. It is not a guide. It is not a tutorial for doing this yourself. It simply describes the psychological torture I went through to make this project work
 
 ### Figuring out how LSFG works
-The first thing I did was open Lossless Scaling in dnSpy, which quickly revealed that all the magic was in Lossless.dll file.\
-Then I opened up Lossless.dll in IDA... and quickly found out that this is a D3D11 program.
+The first thing I did was open VScale in dnSpy, which quickly revealed that all the magic was in VScale.dll file.\
+Then I opened up VScale.dll in IDA... and quickly found out that this is a D3D11 program.
 
 I closed dnSpy and IDA. What this teaches you is that throwing IDA at something is not always the right move.
 
@@ -28,7 +28,7 @@ DXVK is a project that pretends to be D3D11 and provides just enough methods to 
 The first step to translating everything to D3D11 was to get the shaders to work.
 Vulkan uses SPIR-V and D3D11 uses DXBC. Thankfully DXVK can translate the shaders just fine.
 
-I wrote a hook for Lossless Scaling that intercepted all D3D11 calls and dumped the shader files to my computer. Then I took those shader files and copied them over to Linux. I wrote a really small D3D11 app that loaded one shader, loaded a texture that I dumped into it, and dumped the outputs. Voila, WinMerge tells me the files are identical!
+I wrote a hook for VScale that intercepted all D3D11 calls and dumped the shader files to my computer. Then I took those shader files and copied them over to Linux. I wrote a really small D3D11 app that loaded one shader, loaded a texture that I dumped into it, and dumped the outputs. Voila, WinMerge tells me the files are identical!
 
 I did this to a few other shaders until I moved on to actually translating the pipeline.
 
@@ -54,12 +54,12 @@ And there we have it, the Vulkan pipeline is completed. What follows is a bit of
 ### Credits
 Huge thanks to [0xNULLderef](https://github.com/0xNULLderef) who sat through this with me. They were the first to suggest native DXVK and taught me how to use IDA and RenderDoc. This project would not have worked without them!
 
-This document details the process of injecting frames into a Vulkan app. It describes the mechanism currently in use in lsfg-vk. This is not a guide, nor a tutorial. This is a technical document explaining what I did and how it works.
+This document details the process of injecting frames into a Vulkan app. It describes the mechanism currently in use in vkb-vk. This is not a guide, nor a tutorial. This is a technical document explaining what I did and how it works.
 
 ---
 
 ## Injecting into a Vulkan app (Jul 6, 2025)
-This document details the process of injecting frames into a Vulkan app. It describes the mechanism currently in use in lsfg-vk. This is not a guide, nor a tutorial. This is a technical document explaining what I did and how it works.
+This document details the process of injecting frames into a Vulkan app. It describes the mechanism currently in use in vkb-vk. This is not a guide, nor a tutorial. This is a technical document explaining what I did and how it works.
 
 ### Injecting into a Vulkan app
 There's plenty of ways to hook into a Vulkan app. At first this project used an `LD_PRELOAD` approach, where `dlopen`, `dlsym` and `dlclose` were hooked and replaced the Vulkan loader with it's own modded version.
@@ -70,7 +70,7 @@ When you link against Vulkan, statically or dynamically it does not matter, you'
 
 This approach allows the Vulkan loader to return function pointers not to the actual driver, but an intermediate function. These intermediary functions are called layers and Vulkan stacks as many as you want ontop of each other.
 
-lsfg-vk uses an implicit layer, which means it is implicitly enabled simply by existing in one of the many Vulkan layer folders, or by having an environment variable set. In our case, it loads when `ENABLE_LSFG` is set to 1.
+vkb-vk uses an implicit layer, which means it is implicitly enabled simply by existing in one of the many Vulkan layer folders, or by having an environment variable set. In our case, it loads when `ENABLE_LSFG` is set to 1.
 
 ### Hooking various functions
 Each layer has its own `vkIntanceGetProcAddr` (and corresponding device-level) function. By default this function simply calls the _next_ layer's `vkInstanceGetProcAddr` function. If you wish to actually override a method, you simply store the next layer's function pointer and return your own method, which then eventually calls the next layer.

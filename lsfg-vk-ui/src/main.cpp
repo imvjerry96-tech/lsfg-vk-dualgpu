@@ -8,13 +8,13 @@
 
 #include "backend.hpp"
 
-using namespace lsfgvk::ui;
+using namespace vkbp::ui;
 
 int main(int argc, char* argv[]) {
     const QGuiApplication app(argc, argv);
-    QGuiApplication::setWindowIcon(QIcon(":/rsc/gay.pancake.lsfg-vk-ui.png"));
-    QGuiApplication::setApplicationName("lsfg-vk-ui");
-    QGuiApplication::setApplicationDisplayName("lsfg-vk-ui");
+    QGuiApplication::setWindowIcon(QIcon(":/rsc/gay.pancake.vkb-vk-ui.png"));
+    QGuiApplication::setApplicationName("vkb-vk-ui");
+    QGuiApplication::setApplicationDisplayName("vkb-vk-ui");
 
     QQmlApplicationEngine engine;
     Backend backend;

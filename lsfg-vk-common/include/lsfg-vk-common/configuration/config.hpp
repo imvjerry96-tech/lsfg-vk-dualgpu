@@ -22,7 +22,10 @@ namespace ls {
     /// pacing methods
     enum class Pacing : uint8_t {
         /// do not perform any pacing (vsync+novrr)
-        None
+        None,
+        /// pace frames using the compositor's FIFO (vsync) instead of the game's
+        /// own (uncapped) render loop. Avoids tearing when the game has VSync off.
+        Wait
     };
 
     /// game profile configuration

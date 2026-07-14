@@ -11,9 +11,11 @@
 #include "lsfg-vk-common/vulkan/vulkan.hpp"
 
 #include <cstdint>
+#include <cstdio>
 #include <optional>
 #include <utility>
 #include <vector>
+#include <cstdlib>
 
 #include <vulkan/vulkan_core.h>
 
@@ -150,6 +152,50 @@ void CommandBuffer::blitImage(const vk::Vulkan& vk,
     );
 }
 
+void CommandBuffer::copyImage(const vk::Vulkan& vk,
+        const std::vector<vk::Barrier>& preBarriers,
+        std::pair<VkImage, VkImage> images, VkExtent2D extent,
+        const std::vector<vk::Barrier>& postBarriers) const {
+    vk.df().CmdPipelineBarrier(*this->commandBuffer,
+        VK_PIPELINE_STAGE_TOP_OF_PIPE_BIT, VK_PIPELINE_STAGE_TRANSFER_BIT,
+        0,
+        0, VK_NULL_HANDLE,
+        0, VK_NULL_HANDLE,
+        static_cast<uint32_t>(preBarriers.size()), preBarriers.data()
+    );
+
+    const VkImageCopy region{
+        .srcSubresource = {
+            .aspectMask = VK_IMAGE_ASPECT_COLOR_BIT,
+            .layerCount = 1
+        },
+        .srcOffset = { 0, 0, 0 },
+        .dstSubresource = {
+            .aspectMask = VK_IMAGE_ASPECT_COLOR_BIT,
+            .layerCount = 1
+        },
+        .dstOffset = { 0, 0, 0 },
+        .extent = {
+            extent.width,
+            extent.height,
+            1
+        }
+    };
+    vk.df().CmdCopyImage(*this->commandBuffer,
+        images.first, VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL,
+        images.second, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL,
+        1, &region
+    );
+
+    vk.df().CmdPipelineBarrier(*this->commandBuffer,
+        VK_PIPELINE_STAGE_TRANSFER_BIT, VK_PIPELINE_STAGE_BOTTOM_OF_PIPE_BIT,
+        0,
+        0, VK_NULL_HANDLE,
+        0, VK_NULL_HANDLE,
+        static_cast<uint32_t>(postBarriers.size()), postBarriers.data()
+    );
+}
+
 void CommandBuffer::copyBufferToImage(const vk::Vulkan& vk,
         const vk::Buffer& buffer, const vk::Image& image) const {
     const VkImageMemoryBarrier barrier{
@@ -219,6 +265,10 @@ void CommandBuffer::submit(const vk::Vulkan& vk,
     signalValues.back() = signalValue;
 
     // create submit info
+    // only attach timeline submit info when we actually use timeline semaphores.
+    // for cross-vendor (binary SYNC_FD fallback) the pNext must stay null.
+    const bool crossGpu = std::getenv("VKBPVK_CROSS_GPU") != nullptr;
+    const bool usesTimeline = (waitTimelineSemaphore || signalTimelineSemaphore) && !crossGpu;
     const VkTimelineSemaphoreSubmitInfo timelineInfo{
         .sType = VK_STRUCTURE_TYPE_TIMELINE_SEMAPHORE_SUBMIT_INFO,
         .waitSemaphoreValueCount = static_cast<uint32_t>(waitValues.size()),
@@ -230,7 +280,7 @@ void CommandBuffer::submit(const vk::Vulkan& vk,
         VK_PIPELINE_STAGE_TOP_OF_PIPE_BIT);
     const VkSubmitInfo submitInfo{
         .sType = VK_STRUCTURE_TYPE_SUBMIT_INFO,
-        .pNext = &timelineInfo,
+        .pNext = usesTimeline ? &timelineInfo : nullptr,
         .waitSemaphoreCount = static_cast<uint32_t>(waitSemaphores.size()),
         .pWaitSemaphores = waitSemaphores.data(),
         .pWaitDstStageMask = stages.data(),
@@ -239,6 +289,11 @@ void CommandBuffer::submit(const vk::Vulkan& vk,
         .signalSemaphoreCount = static_cast<uint32_t>(signalSemaphores.size()),
         .pSignalSemaphores = signalSemaphores.data()
     };
+    fprintf(stderr, "[vkb] QueueSubmit queue=%p cbuf=%p waitCnt=%u sigCnt=%u fn=%p\n",
+        (void*)vk.queue(), (void*)*this->commandBuffer,
+        (uint32_t)waitSemaphores.size(), (uint32_t)signalSemaphores.size(),
+        (void*)(void*)vk.df().QueueSubmit);
+    fflush(stderr);
     auto res = vk.df().QueueSubmit(vk.queue(), 1, &submitInfo, fence);
     if (res != VK_SUCCESS)
         throw ls::vulkan_error(res, "vkQueueSubmit() failed");

@@ -14,6 +14,7 @@
 #include <optional>
 #include <string>
 #include <vector>
+#include <cstdlib>
 
 #include <dlfcn.h>
 #include <vulkan/vk_layer.h>
@@ -158,6 +159,12 @@ namespace {
         return func;
     }
 
+    /// like dpa but returns nullptr instead of throwing (for fallback chains)
+    template<typename T>
+    T dpa_opt(const VulkanInstanceFuncs& funcs, VkDevice device, const char* name) {
+        return reinterpret_cast<T>(funcs.GetDeviceProcAddr(device, name));
+    }
+
     /// create a logical device
     ls::owned_ptr<VkDevice> createLogicalDevice(const VulkanInstanceFuncs& fi,
             VkPhysicalDevice physdev, uint32_t cfi, bool fp16) {
@@ -175,11 +182,13 @@ namespace {
             .queueCount = 1,
             .pQueuePriorities = &queuePriority
         };
-        const std::vector<const char*> requestedExtensions{
+        std::vector<const char*> requestedExtensions{
             VK_KHR_EXTERNAL_MEMORY_FD_EXTENSION_NAME,
             VK_KHR_EXTERNAL_SEMAPHORE_FD_EXTENSION_NAME,
             VK_KHR_TIMELINE_SEMAPHORE_EXTENSION_NAME
         };
+        if (std::getenv("VKBPVK_CROSS_GPU") != nullptr)
+            requestedExtensions.push_back(VK_EXT_EXTERNAL_MEMORY_DMA_BUF_EXTENSION_NAME);
         const VkDeviceCreateInfo deviceInfo{
             .sType = VK_STRUCTURE_TYPE_DEVICE_CREATE_INFO,
             .pNext = &requestedFeaturesVulkan12,
@@ -304,6 +313,7 @@ VulkanInstanceFuncs vk::initVulkanInstanceFuncs(VkInstance i, PFN_vkGetInstanceP
             "vkGetPhysicalDeviceMemoryProperties"),
         .CreateDevice = ipa<PFN_vkCreateDevice>(mpa, i, "vkCreateDevice"),
         .GetDeviceProcAddr = ipa<PFN_vkGetDeviceProcAddr>(mpa, i, "vkGetDeviceProcAddr"),
+        .GetInstanceProcAddr = mpa,
 
         .GetPhysicalDeviceSurfaceCapabilitiesKHR = graphical ?
             ipa<PFN_vkGetPhysicalDeviceSurfaceCapabilitiesKHR>(mpa, i,
@@ -313,7 +323,7 @@ VulkanInstanceFuncs vk::initVulkanInstanceFuncs(VkInstance i, PFN_vkGetInstanceP
 
 /// initialize vulkan device function pointers
 VulkanDeviceFuncs vk::initVulkanDeviceFuncs(const VulkanInstanceFuncs& f, VkDevice d,
-        bool graphical) {
+        VkInstance i, bool graphical) {
     return {
         .GetDeviceQueue = dpa<PFN_vkGetDeviceQueue>(f, d, "vkGetDeviceQueue"),
         .DeviceWaitIdle = dpa<PFN_vkDeviceWaitIdle>(f, d, "vkDeviceWaitIdle"),
@@ -337,6 +347,7 @@ VulkanDeviceFuncs vk::initVulkanDeviceFuncs(const VulkanInstanceFuncs& f, VkDevi
         .EndCommandBuffer = dpa<PFN_vkEndCommandBuffer>(f, d, "vkEndCommandBuffer"),
         .CmdPipelineBarrier = dpa<PFN_vkCmdPipelineBarrier>(f, d, "vkCmdPipelineBarrier"),
         .CmdBlitImage = dpa<PFN_vkCmdBlitImage>(f, d, "vkCmdBlitImage"),
+        .CmdCopyImage = dpa<PFN_vkCmdCopyImage>(f, d, "vkCmdCopyImage"),
         .CmdClearColorImage = dpa<PFN_vkCmdClearColorImage>(f, d, "vkCmdClearColorImage"),
         .CmdBindPipeline = dpa<PFN_vkCmdBindPipeline>(f, d, "vkCmdBindPipeline"),
         .CmdBindDescriptorSets = dpa<PFN_vkCmdBindDescriptorSets>(f, d, "vkCmdBindDescriptorSets"),
@@ -383,15 +394,20 @@ VulkanDeviceFuncs vk::initVulkanDeviceFuncs(const VulkanInstanceFuncs& f, VkDevi
         .GetSemaphoreFdKHR = dpa<PFN_vkGetSemaphoreFdKHR>(f, d, "vkGetSemaphoreFdKHR"),
 
         .CreateSwapchainKHR = graphical ?
-            dpa<PFN_vkCreateSwapchainKHR>(f, d, "vkCreateSwapchainKHR") : nullptr,
+            (dpa_opt<PFN_vkCreateSwapchainKHR>(f, d, "vkCreateSwapchainKHR") ?:
+                ipa<PFN_vkCreateSwapchainKHR>(f.GetInstanceProcAddr, i, "vkCreateSwapchainKHR")) : nullptr,
         .GetSwapchainImagesKHR = graphical ?
-            dpa<PFN_vkGetSwapchainImagesKHR>(f, d, "vkGetSwapchainImagesKHR") : nullptr,
+            (dpa_opt<PFN_vkGetSwapchainImagesKHR>(f, d, "vkGetSwapchainImagesKHR") ?:
+                ipa<PFN_vkGetSwapchainImagesKHR>(f.GetInstanceProcAddr, i, "vkGetSwapchainImagesKHR")) : nullptr,
         .AcquireNextImageKHR = graphical ?
-            dpa<PFN_vkAcquireNextImageKHR>(f, d, "vkAcquireNextImageKHR") : nullptr,
+            (dpa_opt<PFN_vkAcquireNextImageKHR>(f, d, "vkAcquireNextImageKHR") ?:
+                ipa<PFN_vkAcquireNextImageKHR>(f.GetInstanceProcAddr, i, "vkAcquireNextImageKHR")) : nullptr,
         .QueuePresentKHR = graphical ?
-            dpa<PFN_vkQueuePresentKHR>(f, d, "vkQueuePresentKHR") : nullptr,
+            (dpa_opt<PFN_vkQueuePresentKHR>(f, d, "vkQueuePresentKHR") ?:
+                ipa<PFN_vkQueuePresentKHR>(f.GetInstanceProcAddr, i, "vkQueuePresentKHR")) : nullptr,
         .DestroySwapchainKHR = graphical ?
-            dpa<PFN_vkDestroySwapchainKHR>(f, d, "vkDestroySwapchainKHR") : nullptr
+            (dpa_opt<PFN_vkDestroySwapchainKHR>(f, d, "vkDestroySwapchainKHR") ?:
+                ipa<PFN_vkDestroySwapchainKHR>(f.GetInstanceProcAddr, i, "vkDestroySwapchainKHR")) : nullptr
     };
 }
 
@@ -421,7 +437,7 @@ Vulkan::Vulkan(const std::string& appName, version appVersion,
     setLoaderData(setLoaderData),
     device_funcs(initVulkanDeviceFuncs(
         this->instance_funcs,
-        *this->device, false
+        *this->device, *this->instance, isGraphical
     )),
     computeQueue(getQueue(this->device_funcs, *this->device,
         this->setLoaderData,

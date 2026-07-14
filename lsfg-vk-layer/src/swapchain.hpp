@@ -10,15 +10,17 @@
 #include "lsfg-vk-common/vulkan/image.hpp"
 #include "lsfg-vk-common/vulkan/semaphore.hpp"
 #include "lsfg-vk-common/vulkan/timeline_semaphore.hpp"
+#include "lsfg-vk-common/vulkan/drm_syncobj.hpp"
 #include "lsfg-vk-common/vulkan/vulkan.hpp"
 
 #include <cstdint>
+#include <optional>
 #include <utility>
 #include <vector>
 
 #include <vulkan/vulkan_core.h>
 
-namespace lsfgvk::layer {
+namespace vkbp::layer {
 
     /// swapchain info struct
     struct SwapchainInfo {
@@ -41,7 +43,7 @@ namespace lsfgvk::layer {
     public:
         /// create a new swapchain context
         /// @param vk vulkan instance
-        /// @param backend lsfg-vk backend instance
+        /// @param backend vkb-vk backend instance
         /// @param profile active game profile
         /// @param info swapchain info
         Swapchain(const vk::Vulkan& vk, backend::Instance& backend,
@@ -62,6 +64,9 @@ namespace lsfgvk::layer {
         std::vector<vk::Image> sourceImages;
         std::vector<vk::Image> destinationImages;
         ls::lazy<vk::TimelineSemaphore> syncSemaphore;
+        // cross-gpu: shared drm_syncobj container (layer side, on the app GPU).
+        // exported once at init as an fd passed to the backend via openContext.
+        std::optional<vk::DrmSyncTimeline> drmTimeline;
 
         ls::lazy<vk::CommandBuffer> renderCommandBuffer;
         ls::lazy<vk::Fence> renderFence;

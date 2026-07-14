@@ -7,8 +7,8 @@
 #include <filesystem>
 #include <iostream>
 
-using namespace lsfgvk::cli;
-using namespace lsfgvk::cli::validate;
+using namespace vkbp::cli;
+using namespace vkbp::cli::validate;
 
 int validate::run(const Options& opts) {
     std::filesystem::path path{ls::findConfigurationFile()};

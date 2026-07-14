@@ -14,8 +14,8 @@
 #include <utility>
 #include <vector>
 
-using namespace lsfgvk;
-using namespace lsfgvk::ui;
+using namespace vkbp;
+using namespace vkbp::ui;
 
 QStringList ui::getAvailableGPUs() {
     // list of found GPUs and their optional PCI IDs

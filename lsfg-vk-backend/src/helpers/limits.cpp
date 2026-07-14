@@ -7,8 +7,8 @@
 #include <cstddef>
 #include <cstdint>
 
-using namespace lsfgvk;
-using namespace lsfgvk::backend;
+using namespace vkbp;
+using namespace vkbp::backend;
 
 namespace {
     const vk::Limits BASE_LIMITS{

@@ -17,8 +17,8 @@
 #include <array>
 #include <span>
 
-using namespace lsfgvk;
-using namespace lsfgvk::backend;
+using namespace vkbp;
+using namespace vkbp::backend;
 
 namespace {
     /// DOS file header

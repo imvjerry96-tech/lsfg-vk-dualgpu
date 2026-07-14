@@ -15,13 +15,13 @@
 #include <bits/getopt_core.h>
 #include <bits/getopt_ext.h>
 
-using namespace lsfgvk::cli;
+using namespace vkbp::cli;
 
 namespace {
     /// print usage information
     void usage(const std::string& prog) {
         std::cerr <<
-R"(Validate, benchmark, and debug lsfg-vk.
+R"(Validate, benchmark, and debug vkb-vk.
 
 USAGE:
     )" << prog << R"( <COMMAND> [OPTIONS] [ARGS]
@@ -29,7 +29,7 @@ USAGE:
 COMMANDS:
     validate    Validate a configuration file
     benchmark   Run a benchmark
-    debug       Run lsfg-vk on a set of images
+    debug       Run vkb-vk on a set of images
 
 SUBCOMMAND OPTIONS:
 
@@ -37,7 +37,7 @@ SUBCOMMAND OPTIONS:
         -c, --config <PATH>             Optional path to the configuration file
 
     benchmark & debug
-        -d, --dll <PATH>                Path to Lossless.dll
+        -d, --dll <PATH>                Path to VScale.dll
         -a, --allow-fp16                Allow FP16 acceleration
         -w, --width <INT>               Width of the input frames
         -h, --height <INT>              Height of the input frames

@@ -7,8 +7,18 @@
 
 #include <bitset>
 #include <optional>
+#include <cstdlib>
 
 #include <vulkan/vulkan_core.h>
+
+/// select external memory handle type
+/// OPAQUE_FD works for same-vendor GPU sharing; DMA_BUF is required for
+/// cross-vendor sharing (e.g. NVIDIA render -> AMD frame-gen)
+static VkExternalMemoryHandleTypeFlagBits selectedMemHandleType() {
+    return std::getenv("VKBPVK_CROSS_GPU") != nullptr
+        ? VK_EXTERNAL_MEMORY_HANDLE_TYPE_DMA_BUF_BIT_EXT
+        : VK_EXTERNAL_MEMORY_HANDLE_TYPE_OPAQUE_FD_BIT_KHR;
+}
 
 using namespace vk;
 
@@ -21,8 +31,9 @@ namespace {
 
         const VkExternalMemoryImageCreateInfo externalInfo{
             .sType = VK_STRUCTURE_TYPE_EXTERNAL_MEMORY_IMAGE_CREATE_INFO,
-            .handleTypes = VK_EXTERNAL_MEMORY_HANDLE_TYPE_OPAQUE_FD_BIT_KHR
+            .handleTypes = selectedMemHandleType()
         };
+        const bool crossGpu = std::getenv("VKBPVK_CROSS_GPU") != nullptr;
         const VkImageCreateInfo imageInfo{
             .sType = VK_STRUCTURE_TYPE_IMAGE_CREATE_INFO,
             .pNext = external ? &externalInfo : nullptr,
@@ -36,6 +47,7 @@ namespace {
             .mipLevels = 1,
             .arrayLayers = 1,
             .samples = VK_SAMPLE_COUNT_1_BIT,
+            .tiling = crossGpu ? VK_IMAGE_TILING_LINEAR : VK_IMAGE_TILING_OPTIMAL,
             .usage = usage,
             .sharingMode = VK_SHARING_MODE_EXCLUSIVE
         };
@@ -60,7 +72,7 @@ namespace {
 
         auto mti = vk.findMemoryTypeIndex(
             reqs.memoryTypeBits,
-            false
+            std::getenv("VKBPVK_CROSS_GPU") != nullptr
         );
         if (!mti.has_value())
             throw ls::vulkan_error("no suitable memory type found for image");
@@ -72,13 +84,13 @@ namespace {
         const VkImportMemoryFdInfoKHR importInfo{
             .sType = VK_STRUCTURE_TYPE_IMPORT_MEMORY_FD_INFO_KHR,
             .pNext = &dedicatedInfo,
-            .handleType = VK_EXTERNAL_MEMORY_HANDLE_TYPE_OPAQUE_FD_BIT_KHR,
+            .handleType = selectedMemHandleType(),
             .fd = importFd.value_or(-1)
         };
         const VkExportMemoryAllocateInfo exportInfo{
             .sType = VK_STRUCTURE_TYPE_EXPORT_MEMORY_ALLOCATE_INFO,
             .pNext = &dedicatedInfo,
-            .handleTypes = VK_EXTERNAL_MEMORY_HANDLE_TYPE_OPAQUE_FD_BIT_KHR
+            .handleTypes = selectedMemHandleType()
         };
         const void* pNextAlloc{};
         if (importFd.has_value())
@@ -103,7 +115,7 @@ namespace {
             const VkMemoryGetFdInfoKHR fdInfo{
                 .sType = VK_STRUCTURE_TYPE_MEMORY_GET_FD_INFO_KHR,
                 .memory = handle,
-                .handleType = VK_EXTERNAL_MEMORY_HANDLE_TYPE_OPAQUE_FD_BIT_KHR
+                .handleType = selectedMemHandleType()
             };
             int fd{};
             res = vk.df().GetMemoryFdKHR(vk.dev(), &fdInfo, &fd);

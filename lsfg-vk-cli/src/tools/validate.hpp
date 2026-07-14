@@ -5,7 +5,7 @@
 #include <optional>
 #include <string>
 
-namespace lsfgvk::cli::validate {
+namespace vkbp::cli::validate {
 
     /// options for the "validate" command
     struct Options {

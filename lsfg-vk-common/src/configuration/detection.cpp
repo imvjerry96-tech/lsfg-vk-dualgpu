@@ -45,8 +45,8 @@ namespace {
 Identification ls::identify() {
     Identification id{};
 
-    // fetch LSFGVK_PROFILE
-    const char* override = std::getenv("LSFGVK_PROFILE");
+    // fetch VKBPVK_PROFILE
+    const char* override = std::getenv("VKBPVK_PROFILE");
     if (override && *override != '\0')
         id.override = std::string(override);
 
@@ -103,7 +103,7 @@ std::optional<std::pair<IdentType, GameConf>> ls::findProfile(
     const auto& profiles = config.profiles();
 
     // check for the environment option first
-    if (std::getenv("LSFGVK_ENV") != nullptr)
+    if (std::getenv("VKBPVK_ENV") != nullptr)
         return std::make_pair(IdentType::OVERRIDE, profiles.front());
 
     // then override first
@@ -131,6 +131,11 @@ std::optional<std::pair<IdentType, GameConf>> ls::findProfile(
         if (proc_profile.has_value())
             return std::make_pair(IdentType::PROCESS_NAME, proc_profile.value());
     }
+
+    // fallback: match with "gamescope" string from binary (for gamescope routing)
+    const auto gamescope_profile = matchById(profiles, "gamescope");
+    if (gamescope_profile.has_value())
+        return std::make_pair(IdentType::PROCESS_NAME, gamescope_profile.value());
 
     return std::nullopt;
 }

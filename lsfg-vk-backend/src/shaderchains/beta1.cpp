@@ -13,7 +13,7 @@
 
 #include <vulkan/vulkan_core.h>
 
-using namespace lsfgvk::backend;
+using namespace vkbp::backend;
 
 Beta1::Beta1(const Ctx& ctx,
         const std::vector<vk::Image>& sourceImages) {

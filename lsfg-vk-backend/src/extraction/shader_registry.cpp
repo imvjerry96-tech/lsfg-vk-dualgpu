@@ -12,8 +12,8 @@
 #include <unordered_map>
 #include <vector>
 
-using namespace lsfgvk;
-using namespace lsfgvk::backend;
+using namespace vkbp;
+using namespace vkbp::backend;
 
 namespace {
     /// get the source code for a shader

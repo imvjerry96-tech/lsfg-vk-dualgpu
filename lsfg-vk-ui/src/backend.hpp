@@ -14,7 +14,7 @@
 #define getters public
 #define setters public
 
-namespace lsfgvk::ui {
+namespace vkbp::ui {
 
     /// Class tying ui and configuration together
     class Backend : public QObject {

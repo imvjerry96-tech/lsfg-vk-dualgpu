@@ -9,7 +9,7 @@
 #include <unordered_map>
 #include <vector>
 
-namespace lsfgvk::backend {
+namespace vkbp::backend {
 
     /// shader collection struct
     struct Shaders {

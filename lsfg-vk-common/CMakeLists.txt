@@ -7,6 +7,7 @@ set(COMMON_SOURCES
     "src/vulkan/command_buffer.cpp"
     "src/vulkan/descriptor_pool.cpp"
     "src/vulkan/descriptor_set.cpp"
+    "src/vulkan/drm_syncobj.cpp"
     "src/vulkan/fence.cpp"
     "src/vulkan/image.cpp"
     "src/vulkan/sampler.cpp"
@@ -22,6 +23,14 @@ target_include_directories(lsfg-vk-common
 
 target_include_directories(lsfg-vk-common SYSTEM
     PRIVATE thirdparty/include)
+
+# libdrm for the cross-vendor drm_syncobj timeline bridge
+find_library(LIBDRM drm)
+if(LIBDRM)
+    target_include_directories(lsfg-vk-common SYSTEM
+        PRIVATE /usr/include/libdrm)
+    target_link_libraries(lsfg-vk-common PRIVATE ${LIBDRM})
+endif()
 
 if(LSFGVK_INSTALL_DEVELOP)
     install(TARGETS lsfg-vk-common

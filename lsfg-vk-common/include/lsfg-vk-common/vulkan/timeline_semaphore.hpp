@@ -42,7 +42,13 @@ namespace vk {
         /// get the underlying VkSemaphore handle
         /// @return the VkSemaphore handle
         [[nodiscard]] const auto& handle() const { return *this->semaphore; }
+
+        /// when cross-vendor, timeline semaphores fall back to binary SYNC_FD
+        /// semaphores (radv cannot export timeline semaphores via SYNC_FD).
+        /// in that mode, queue submits must NOT attach timeline submit info.
+        [[nodiscard]] bool isBinaryFallback() const { return isBinary; }
     private:
         ls::owned_ptr<VkSemaphore> semaphore;
+        bool isBinary;
     };
 }

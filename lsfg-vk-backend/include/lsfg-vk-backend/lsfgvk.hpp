@@ -11,7 +11,7 @@
 #include <utility>
 #include <vector>
 
-namespace lsfgvk::backend {
+namespace vkbp::backend {
 
     class [[gnu::visibility("default")]] ContextImpl;
     class [[gnu::visibility("default")]] InstanceImpl;
@@ -58,10 +58,10 @@ namespace lsfgvk::backend {
     class [[gnu::visibility("default")]] Instance {
     public:
         ///
-        /// Create a lsfg-vk instance
+        /// Create a vkb-vk instance
         ///
         /// @param devicePicker Function that picks a physical device based on some identifiers.
-        /// @param shaderDllPath Path to the Lossless.dll file to load shaders from.
+        /// @param shaderDllPath Path to the VScale.dll file to load shaders from.
         /// @param allowLowPrecision Whether to load low-precision (FP16) shaders if supported.
         ///
         /// @throws backend::error on failure
@@ -134,7 +134,7 @@ namespace lsfgvk::backend {
     };
 
     ///
-    /// Make all lsfg-vk instances leaking.
+    /// Make all vkb-vk instances leaking.
     /// This is to workaround a bug in the Vulkan loader, which
     /// makes it impossible to destroy Vulkan instances and devices.
     ///

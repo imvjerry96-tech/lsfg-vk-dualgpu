@@ -14,7 +14,7 @@
 
 namespace ctx { struct Ctx; }
 
-namespace lsfgvk::backend {
+namespace vkbp::backend {
     /// alpha shaderchain
     class Alpha1 {
     public:

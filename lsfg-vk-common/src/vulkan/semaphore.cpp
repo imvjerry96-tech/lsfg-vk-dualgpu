@@ -6,8 +6,17 @@
 #include "lsfg-vk-common/vulkan/vulkan.hpp"
 
 #include <optional>
+#include <cstdlib>
 
 #include <vulkan/vulkan_core.h>
+
+/// select external semaphore handle type
+/// OPAQUE_FD works for same-vendor; SYNC_FD is required cross-vendor
+static VkExternalSemaphoreHandleTypeFlagBits selectedSemHandleType() {
+    return std::getenv("VKBPVK_CROSS_GPU") != nullptr
+        ? VK_EXTERNAL_SEMAPHORE_HANDLE_TYPE_SYNC_FD_BIT
+        : VK_EXTERNAL_SEMAPHORE_HANDLE_TYPE_OPAQUE_FD_BIT;
+}
 
 using namespace vk;
 
@@ -18,7 +27,7 @@ namespace {
 
         const VkExportSemaphoreCreateInfo exportInfo{
             .sType = VK_STRUCTURE_TYPE_EXPORT_SEMAPHORE_CREATE_INFO,
-            .handleTypes = VK_EXTERNAL_SEMAPHORE_HANDLE_TYPE_OPAQUE_FD_BIT
+            .handleTypes = selectedSemHandleType()
         };
         const VkSemaphoreCreateInfo semaphoreInfo{
             .sType = VK_STRUCTURE_TYPE_SEMAPHORE_CREATE_INFO,
@@ -33,7 +42,7 @@ namespace {
             const VkImportSemaphoreFdInfoKHR importInfo{
                 .sType = VK_STRUCTURE_TYPE_IMPORT_SEMAPHORE_FD_INFO_KHR,
                 .semaphore = handle,
-                .handleType = VK_EXTERNAL_SEMAPHORE_HANDLE_TYPE_OPAQUE_FD_BIT,
+                .handleType = selectedSemHandleType(),
                 .fd = *fd // closes the fd
             };
             res = vk.df().ImportSemaphoreFdKHR(vk.dev(), &importInfo);

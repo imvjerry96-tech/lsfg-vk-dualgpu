@@ -30,7 +30,7 @@ void ConfigFile::createDefaultConfigFile(const std::filesystem::path& path) {
         ofs << R"(version = 2
 
 [global]
-# dll = '/media/games/Lossless Scaling/Lossless.dll' # if you don't have LS in the default location
+# dll = '/media/games/VScale/VScale.dll' # if you don't have LS in the default location
 allow_fp16 = true # this will improve give a MASSIVE performance boost on AMD, but be super slow on older (!) NVIDIA GPUs
 
 [[profile]]
@@ -47,8 +47,8 @@ pacing = 'none' # see the wiki for more info
 
 [[profile]]
 name = "2x FG / 100%"
-active_in = 'GenshinImpact.exe'
-gpu = 'NVIDIA GeForce RTX 5080'
+active_in = 'gamescope'
+gpu = 'AMD Radeon RX 6600 (RADV NAVI23)'
 multiplier = 2
 )";
         ofs.close();
@@ -75,9 +75,9 @@ ConfigFile::ConfigFile() {
     this->profileConfs.emplace_back(GameConf {
         .name = "2x FG / 100%",
         .active_in = {
-            "GenshinImpact.exe"
+            "gamescope"
         },
-        .gpu = "NVIDIA GeForce RTX 5080",
+        .gpu = "AMD Radeon RX 6600 (RADV NAVI23)",
         .multiplier = 2
     });
 }
@@ -104,6 +104,8 @@ namespace {
     Pacing parcingFromString(const std::string& str) {
         if (str == "none")
             return Pacing::None;
+        if (str == "wait")
+            return Pacing::Wait;
         throw ls::error("unknown pacing method: " + str);
     }
     /// parse the global configuration
@@ -144,10 +146,10 @@ namespace {
             .allow_fp16 = true
         };
 
-        const char* dll = std::getenv("LSFGVK_DLL_PATH");
+        const char* dll = std::getenv("VKBPVK_DLL_PATH");
         if (dll && *dll != '\0')
             conf.dll = std::string(dll);
-        const char* no_fp16 = std::getenv("LSFGVK_NO_FP16");
+        const char* no_fp16 = std::getenv("VKBPVK_NO_FP16");
         if (no_fp16 && *no_fp16 != '\0')
             conf.allow_fp16 = std::string(no_fp16) != "1";
 
@@ -169,15 +171,15 @@ namespace {
             .pacing = Pacing::None
         };
 
-        const char* gpu = std::getenv("LSFGVK_GPU");
+        const char* gpu = std::getenv("VKBPVK_GPU");
         if (gpu) conf.gpu = std::string(gpu);
-        const char* multiplier = std::getenv("LSFGVK_MULTIPLIER");
+        const char* multiplier = std::getenv("VKBPVK_MULTIPLIER");
         if (multiplier) conf.multiplier = static_cast<size_t>(std::stoul(multiplier));
-        const char* flow_scale = std::getenv("LSFGVK_FLOW_SCALE");
+        const char* flow_scale = std::getenv("VKBPVK_FLOW_SCALE");
         if (flow_scale) conf.flow_scale = std::stof(flow_scale);
-        const char* performance = std::getenv("LSFGVK_PERFORMANCE_MODE");
+        const char* performance = std::getenv("VKBPVK_PERFORMANCE_MODE");
         if (performance) conf.performance_mode = std::string(performance) == "1";
-        const char* pacing = std::getenv("LSFGVK_PACING");
+        const char* pacing = std::getenv("VKBPVK_PACING");
         if (pacing) conf.pacing = parcingFromString(std::string(pacing));
 
         if (conf.multiplier <= 1)
@@ -268,7 +270,7 @@ void ConfigFile::write(const std::filesystem::path& path) const {
 }
 
 WatchedConfig::WatchedConfig() : path(findConfigurationFile()) {
-    if (std::getenv("LSFGVK_ENV")) {
+    if (std::getenv("VKBPVK_ENV")) {
         auto& config = this->configFile;
         config.global() = parseGlobalConfFromEnv();
         config.profiles() = { parseGameConfFromEnv() };
@@ -283,7 +285,7 @@ WatchedConfig::WatchedConfig() : path(findConfigurationFile()) {
 }
 
 bool WatchedConfig::update() {
-    if (std::getenv("LSFGVK_ENV"))
+    if (std::getenv("VKBPVK_ENV"))
         return false;
 
     const auto now = std::filesystem::last_write_time(this->path);
@@ -297,8 +299,8 @@ bool WatchedConfig::update() {
 }
 
 std::filesystem::path ls::findConfigurationFile() {
-    // always honor LSFGVK_CONFIG if set
-    const char* envPath = std::getenv("LSFGVK_CONFIG");
+    // always honor VKBPVK_CONFIG if set
+    const char* envPath = std::getenv("VKBPVK_CONFIG");
     if (envPath && *envPath != '\0')
         return{envPath};
 
@@ -306,14 +308,14 @@ std::filesystem::path ls::findConfigurationFile() {
     const char* xdgPath = std::getenv("XDG_CONFIG_HOME");
     if (xdgPath && *xdgPath != '\0')
         return std::filesystem::path(xdgPath)
-            / "lsfg-vk" / "conf.toml";
+            / "vkb-vk" / "conf.toml";
 
     // fallback to typical user home
     const char* homePath = std::getenv("HOME");
     if (homePath && *homePath != '\0')
         return std::filesystem::path(homePath)
-            / ".config" / "lsfg-vk" / "conf.toml";
+            / ".config" / "vkb-vk" / "conf.toml";
 
     // finally, use system-wide config
-    return "/etc/lsfg-vk/conf.toml";
+    return "/etc/vkb-vk/conf.toml";
 }

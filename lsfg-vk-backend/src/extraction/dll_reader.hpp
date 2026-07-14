@@ -7,7 +7,7 @@
 #include <unordered_map>
 #include <vector>
 
-namespace lsfgvk::backend {
+namespace vkbp::backend {
 
     /// extract all resources from a DLL file
     /// @param dll path to the DLL file

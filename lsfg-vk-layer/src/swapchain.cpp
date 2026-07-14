@@ -13,6 +13,7 @@
 #include <algorithm>
 #include <cstddef>
 #include <cstdint>
+#include <cstdio>
 #include <exception>
 #include <functional>
 #include <optional>
@@ -21,8 +22,8 @@
 
 #include <vulkan/vulkan_core.h>
 
-using namespace lsfgvk;
-using namespace lsfgvk::layer;
+using namespace vkbp;
+using namespace vkbp::layer;
 
 namespace {
     VkImageMemoryBarrier barrierHelper(VkImage handle,
@@ -63,6 +64,16 @@ void layer::context_ModifySwapchainCreateInfo(const ls::GameConf& profile, uint3
 
             createInfo.presentMode = VK_PRESENT_MODE_FIFO_KHR;
             break;
+        case ls::Pacing::Wait:
+            // Wait pacing: rely on the compositor's FIFO (vsync) to pace frames
+            // instead of the game's own (uncapped) render loop. This avoids the
+            // heavy tearing seen with Pacing::None when the game has VSync off.
+            createInfo.minImageCount += profile.multiplier;
+            if (maxImages && createInfo.minImageCount > maxImages)
+                createInfo.minImageCount = maxImages;
+
+            createInfo.presentMode = VK_PRESENT_MODE_FIFO_KHR;
+            break;
     }
 }
 
@@ -91,7 +102,17 @@ Swapchain::Swapchain(const vk::Vulkan& vk, backend::Instance& backend,
             std::nullopt, &fd);
 
     int syncFd{};
-    this->syncSemaphore.emplace(vk, 0, std::nullopt, &syncFd);
+    if (std::getenv("VKBPVK_CROSS_GPU") != nullptr) {
+        // cross-vendor: share the WHOLE drm_syncobj container (on the app GPU)
+        // as a single fd. The backend imports it once and drmWait()s on any
+        // future point with zero per-frame IPC. No Vulkan cross-vendor import.
+        const char* node = std::getenv("VKBPVK_DRM_NODE");
+        const char* drmPath = node ? node : "/dev/dri/card1"; // default: RTX
+        this->drmTimeline.emplace(drmPath);
+        syncFd = this->drmTimeline->shareToFd();
+    } else {
+        this->syncSemaphore.emplace(vk, 0, std::nullopt, &syncFd);
+    }
 
     try {
         this->ctx = ls::owned_ptr<ls::R<backend::Context>>(
@@ -135,41 +156,27 @@ VkResult Swapchain::present(const vk::Vulkan& vk,
     const auto& swapchainImage = this->info.images.at(imageIdx);
     const auto& sourceImage = this->sourceImages.at(this->fidx % 2);
 
-    // schedule frame generation
-    try {
-        this->instance.get().scheduleFrames(this->ctx.get());
-    } catch (const std::exception& e) {
-        throw ls::error("failed to schedule frames", e);
+    fprintf(stderr, "[vkb] present() enter fidx=%zu idx=%zu format=%u hdr=%d\n",
+        this->fidx, this->idx, (uint32_t)this->info.format, (int)(this->info.format > 57));
+
+    // wait for completion of previous frame. Use a generous timeout: in-game
+    // hitches / level loads can stall a frame well past 150ms, and throwing
+    // VK_TIMEOUT here aborts the present (-> visible tearing). On timeout we
+    // just skip this present and let the next frame catch up.
+    if (this->fidx) {
+        if (!this->renderFence->wait(vk, 2000ULL * 1000 * 1000))
+            return VK_TIMEOUT;
+        this->renderFence->reset(vk);
     }
-
-    // update present mode when not using pacing
-    if (this->profile.pacing == ls::Pacing::None) {
-#pragma clang diagnostic push
-#pragma clang diagnostic ignored "-Wunknown-warning-option"
-#pragma clang diagnostic ignored "-Wunsafe-buffer-usage"
-        auto* info = reinterpret_cast<VkSwapchainPresentModeInfoEXT*>(next_chain);
-        while (info) {
-            if (info->sType == VK_STRUCTURE_TYPE_SWAPCHAIN_PRESENT_MODE_INFO_EXT) {
-                for (size_t i = 0; i < info->swapchainCount; i++)
-                    const_cast<VkPresentModeKHR*>(info->pPresentModes)[i] =
-                        VK_PRESENT_MODE_FIFO_KHR;
-            }
-
-            info = reinterpret_cast<VkSwapchainPresentModeInfoEXT*>(const_cast<void*>(info->pNext));
-        }
-#pragma clang diagnostic pop
-    }
-
-    // wait for completion of previous frame
-    if (this->fidx && !this->renderFence->wait(vk, 150ULL * 1000 * 1000))
-        throw ls::vulkan_error(VK_TIMEOUT, "vkWaitForFences() failed");
-    this->renderFence->reset(vk);
 
     // copy swapchain image into backend source image
     const auto& cmdbuf = *this->renderCommandBuffer;
     cmdbuf.begin(vk);
+    fprintf(stderr, "[vkb] copy swapchain->source begin (srcExtent=%ux%u dstExtent=%ux%u)\n",
+        (uint32_t)this->info.extent.width, (uint32_t)this->info.extent.height,
+        (uint32_t)sourceImage.getExtent().width, (uint32_t)sourceImage.getExtent().height);
 
-    cmdbuf.blitImage(vk,
+    cmdbuf.copyImage(vk,
         {
             barrierHelper(swapchainImage,
                 VK_ACCESS_NONE,
@@ -195,12 +202,45 @@ VkResult Swapchain::present(const vk::Vulkan& vk,
             ),
         }
     );
+    fprintf(stderr, "[vkb] copyImage recorded, ending cmdbuf\n");
 
     cmdbuf.end(vk);
-    cmdbuf.submit(vk,
-        semaphores, VK_NULL_HANDLE, 0,
-        {}, this->syncSemaphore->handle(), this->idx++
-    );
+    fprintf(stderr, "[vkb] before copy submit: queue=%p swapImg=%p srcImg=%p\n",
+        (void*)vk.queue(), (void*)swapchainImage, (void*)sourceImage.handle());
+    fflush(stderr);
+    if (this->drmTimeline.has_value()) {
+        // cross-vendor: submit the copy first (so sourceImage is populated),
+        // then signal the shared kernel timeline point. The backend (RADV)
+        // drmWait()s on this point with zero IPC.
+        try {
+            cmdbuf.submit(vk,
+                {}, VK_NULL_HANDLE, 0,
+                {}, VK_NULL_HANDLE, 0
+            );
+            fprintf(stderr, "[vkb] copy submit OK\n");
+        } catch (const std::exception& e) {
+            fprintf(stderr, "[vkb] copy submit THREW: %s\n", e.what());
+            throw;
+        }
+        const uint64_t point = this->idx++;
+        this->drmTimeline->signal(point);
+        fprintf(stderr, "[vkb] signaled drmTimeline point=%lu\n", (unsigned long)point);
+    } else {
+        cmdbuf.submit(vk,
+            semaphores, VK_NULL_HANDLE, 0,
+            {}, this->syncSemaphore->handle(), this->idx++
+        );
+    }
+
+    // schedule frame generation (AFTER source is populated + signaled, so the
+    // backend's sharedTimeline->wait() does not deadlock on an unsignaled point)
+    try {
+        this->instance.get().scheduleFrames(this->ctx.get());
+        fprintf(stderr, "[vkb] scheduleFrames OK\n");
+    } catch (const std::exception& e) {
+        fprintf(stderr, "[vkb] scheduleFrames THREW: %s\n", e.what());
+        throw ls::error("failed to schedule frames", e);
+    }
 
     for (size_t i = 0; i < this->destinationImages.size(); i++) {
         auto& pcs = this->postCopySemaphores.at(this->idx % this->postCopySemaphores.size());
@@ -223,7 +263,7 @@ VkResult Swapchain::present(const vk::Vulkan& vk,
         auto& cmdbuf = pass.commandBuffer;
         cmdbuf.begin(vk);
 
-        cmdbuf.blitImage(vk,
+        cmdbuf.copyImage(vk,
             {
                 barrierHelper(destinationImage.handle(),
                     VK_ACCESS_NONE,
@@ -263,7 +303,9 @@ VkResult Swapchain::present(const vk::Vulkan& vk,
 
         cmdbuf.end(vk);
         cmdbuf.submit(vk,
-            waitSemaphores, this->syncSemaphore->handle(), this->idx,
+            waitSemaphores,
+            this->syncSemaphore.has_value() ? this->syncSemaphore->handle() : VK_NULL_HANDLE,
+            this->idx,
             signalSemaphores, VK_NULL_HANDLE, 0,
             i == this->destinationImages.size() - 1 ? this->renderFence->handle() : VK_NULL_HANDLE
         );

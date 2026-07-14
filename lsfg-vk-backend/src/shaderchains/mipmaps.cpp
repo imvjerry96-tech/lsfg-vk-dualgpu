@@ -14,7 +14,7 @@
 
 #include <vulkan/vulkan_core.h>
 
-using namespace lsfgvk::backend;
+using namespace vkbp::backend;
 
 Mipmaps::Mipmaps(const Ctx& ctx,
         const std::pair<vk::Image, vk::Image>& sourceImages) {

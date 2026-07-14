@@ -5,6 +5,7 @@
 #include <exception>
 #include <stdexcept>
 #include <string>
+#include <cstdio>
 
 #include <vulkan/vulkan_core.h>
 
@@ -17,7 +18,11 @@ namespace ls {
         /// @param msg the error message
         explicit vulkan_error(VkResult result, const std::string& msg)
             : std::runtime_error(msg + " (error " + std::to_string(result) + ")"),
-              result(result) {}
+              result(result) {
+            // DEBUG: print exact vulkan error to stderr
+            fprintf(stderr, "[VKB-DEBUG] vulkan_error: %s (VkResult=%d)\n",
+                msg.c_str(), static_cast<int>(result));
+        }
 
         /// construct a vulkan_error
         /// @param msg the error message

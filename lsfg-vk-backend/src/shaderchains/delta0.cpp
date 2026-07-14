@@ -12,7 +12,7 @@
 
 #include <vulkan/vulkan_core.h>
 
-using namespace lsfgvk::backend;
+using namespace vkbp::backend;
 
 Delta0::Delta0(const Ctx& ctx, size_t idx,
         const std::vector<std::vector<vk::Image>>& sourceImages,

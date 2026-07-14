@@ -1,8 +1,8 @@
-# Building lsfg-vk from Source
-This guide provides step-by-step instructions on how to build the lsfg-vk project from source code.
+# Building vkb-vk from Source
+This guide provides step-by-step instructions on how to build the vkb-vk project from source code.
 
 >[!IMPORTANT]
->If you are planning on compiling lsfg-vk on a Steam Deck, you need to disable the read-only protection and reinstall certain system packages first:
+>If you are planning on compiling vkb-vk on a Steam Deck, you need to disable the read-only protection and reinstall certain system packages first:
 > ```bash
 > sudo steamos-readonly disable
 > sudo pacman-key --init
@@ -19,7 +19,7 @@ You will need the following dependencies:
 - CMake (version 3.10 or higher)
 - Ninja build system (other build systems may work, but Ninja is recommended)
 - Vulkan SDK
-- Qt6 and Qt6Quick (only needed when building lsfg-vk-ui)
+- Qt6 and Qt6Quick (only needed when building vkb-vk-ui)
 
 The list of required packages may vary depending on your operating system. Below are the installation commands for some common Linux distributions.
 ```bash
@@ -43,14 +43,14 @@ sudo pacman -S --needed \
     qt6-base qt6-declarative
 ```
 
-### Building & Installing lsfg-vk
+### Building & Installing vkb-vk
 
 1. **Clone the Repository**
 
-Clone the lsfg-vk repository from GitHub:
+Clone the vkb-vk repository from GitHub:
 ```bash
-git clone https://github.com/PancakeTAS/lsfg-vk.git
-cd lsfg-vk
+git clone https://github.com/PancakeTAS/vkb-vk.git
+cd vkb-vk
 ```
 
 Optionally, you can checkout a specific release tag:
@@ -60,27 +60,27 @@ git checkout tags/vX.Y.Z
 
 2. **Configure the build with CMake**
 
-The recommended way to configure lsfg-vk is this:
+The recommended way to configure vkb-vk is this:
 ```bash
 cmake -B build -G Ninja \
     -DCMAKE_BUILD_TYPE=Release \
     -DCMAKE_INSTALL_PREFIX=/usr/local \
     -DCMAKE_CXX_COMPILER=clang++ \
-    -DLSFGVK_BUILD_UI=On \
-    -DLSFGVK_INSTALL_XDG_FILES=On
+    -DVKBPVK_BUILD_UI=On \
+    -DVKBPVK_INSTALL_XDG_FILES=On
 ```
 
-However, lsfg-vk provides several CMake options to customize the build process:
+However, vkb-vk provides several CMake options to customize the build process:
 - `CMAKE_BUILD_TYPE`: Set to `Release` for optimized builds or `Debug` for debugging builds.
 - `CMAKE_INSTALL_PREFIX`: Specify the installation directory (default is `/usr/local`).
-- `LSFGVK_BUILD_VK_LAYER`: Set to `On` to build the Vulkan layer (default is `On`).
-- `LSFGVK_BUILD_UI`: Set to `On` to build the user interface (default is `Off`).
-- `LSFGVK_BUILD_CLI`: Set to `On` to build the command-line interface (default is `On`).
-- `LSFGVK_INSTALL_DEVELOP`: Set to `On` to install development files like headers and libraries (default is `Off`).
-- `LSFGVK_INSTALL_XDG_FILES`: Set to `On` to install XDG desktop files and icons (default is `Off`).
-- `LSFGVK_LAYER_LIBRARY_PATH`: Override the path to the Vulkan layer library (by default, Vulkan will search the systems library path).
+- `VKBPVK_BUILD_VK_LAYER`: Set to `On` to build the Vulkan layer (default is `On`).
+- `VKBPVK_BUILD_UI`: Set to `On` to build the user interface (default is `Off`).
+- `VKBPVK_BUILD_CLI`: Set to `On` to build the command-line interface (default is `On`).
+- `VKBPVK_INSTALL_DEVELOP`: Set to `On` to install development files like headers and libraries (default is `Off`).
+- `VKBPVK_INSTALL_XDG_FILES`: Set to `On` to install XDG desktop files and icons (default is `Off`).
+- `VKBPVK_LAYER_LIBRARY_PATH`: Override the path to the Vulkan layer library (by default, Vulkan will search the systems library path).
 
-Please keep in mind that installing to non-system paths will require `LSFGVK_LAYER_LIBRARY_PATH` to be set accordingly (e.g. `../../../lib/liblsfg-vk-layer.so`).
+Please keep in mind that installing to non-system paths will require `VKBPVK_LAYER_LIBRARY_PATH` to be set accordingly (e.g. `../../../lib/libvkb-vk-layer.so`).
 
 3. **Build the Project**
 

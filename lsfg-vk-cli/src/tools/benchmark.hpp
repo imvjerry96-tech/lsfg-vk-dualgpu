@@ -5,7 +5,7 @@
 #include <optional>
 #include <string>
 
-namespace lsfgvk::cli::benchmark {
+namespace vkbp::cli::benchmark {
 
     /// options for the "benchmark" command
     struct Options {

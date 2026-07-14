@@ -12,7 +12,7 @@
 
 #include <vulkan/vulkan_core.h>
 
-using namespace lsfgvk::backend;
+using namespace vkbp::backend;
 
 Gamma1::Gamma1(const Ctx& ctx, size_t idx,
         const std::vector<vk::Image>& sourceImages,

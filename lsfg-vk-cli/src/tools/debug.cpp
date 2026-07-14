@@ -27,8 +27,8 @@
 
 #include <vulkan/vulkan_core.h>
 
-using namespace lsfgvk::cli;
-using namespace lsfgvk::cli::debug;
+using namespace vkbp::cli;
+using namespace vkbp::cli::debug;
 
 namespace {
     /// uploads an image from a dds file
@@ -97,8 +97,8 @@ int debug::run(const Options& opts) {
 
         // create instance
         const vk::Vulkan vk{
-            "lsfg-vk-debug", vk::version{2, 0, 0},
-            "lsfg-vk-debug-engine", vk::version{2, 0, 0},
+            "vkb-vk-debug", vk::version{2, 0, 0},
+            "vkb-vk-debug-engine", vk::version{2, 0, 0},
             [opts](const vk::VulkanInstanceFuncs fi,
                     const std::vector<VkPhysicalDevice>& devices) {
                 if (!opts.gpu.has_value())
@@ -154,7 +154,7 @@ int debug::run(const Options& opts) {
             dll = *opts.dll;
         else
             dll = ls::findShaderDll();
-        lsfgvk::backend::Instance lsfgvk{
+        vkbp::backend::Instance vkbp{
             [opts](
                 const std::string& gpu_name,
                 std::pair<const std::string&, const std::string&>,
@@ -164,7 +164,7 @@ int debug::run(const Options& opts) {
             },
             dll, opts.allow_fp16
         };
-        lsfgvk::backend::Context& lsfgvk_ctx = lsfgvk.openContext(
+        vkbp::backend::Context& vkbp_ctx = vkbp.openContext(
             srcfds, destfds,
             syncfd, extent.width, extent.height,
             false, 1.0F / opts.flow, opts.performance_mode
@@ -179,7 +179,7 @@ int debug::run(const Options& opts) {
             );
 
             sync.signal(vk, idx++);
-            lsfgvk.scheduleFrames(lsfgvk_ctx);
+            vkbp.scheduleFrames(vkbp_ctx);
 
             for (size_t i = 0; i < destimgs.size(); i++) {
                 auto success = sync.wait(vk, idx++);
@@ -188,8 +188,8 @@ int debug::run(const Options& opts) {
             }
         }
 
-        // deinitialize lsfg-vk
-        lsfgvk.closeContext(lsfgvk_ctx);
+        // deinitialize vkb-vk
+        vkbp.closeContext(vkbp_ctx);
         return EXIT_SUCCESS;
     } catch (const std::exception& e) {
         std::cerr << "error: " << e.what() << "\n";

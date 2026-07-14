@@ -12,7 +12,7 @@
 
 #include <vulkan/vulkan_core.h>
 
-using namespace lsfgvk::backend;
+using namespace vkbp::backend;
 
 Alpha0::Alpha0(const Ctx& ctx,
         const vk::Image& sourceImage) {

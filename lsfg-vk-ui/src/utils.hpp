@@ -4,7 +4,7 @@
 
 #include <QStringList>
 
-namespace lsfgvk::ui {
+namespace vkbp::ui {
 
     /// get the list of available GPUs, automatically
     /// switching to PCI IDs if there are duplicates

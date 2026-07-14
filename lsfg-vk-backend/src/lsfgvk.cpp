@@ -12,6 +12,7 @@
 #include "lsfg-vk-common/vulkan/fence.hpp"
 #include "lsfg-vk-common/vulkan/image.hpp"
 #include "lsfg-vk-common/vulkan/timeline_semaphore.hpp"
+#include "lsfg-vk-common/vulkan/drm_syncobj.hpp"
 #include "lsfg-vk-common/vulkan/vulkan.hpp"
 #include "shaderchains/alpha0.hpp"
 #include "shaderchains/alpha1.hpp"
@@ -43,15 +44,15 @@
 
 #include <vulkan/vulkan_core.h>
 
-#ifdef LSFGVK_TESTING_RENDERDOC
+#ifdef VKBPVK_TESTING_RENDERDOC
 #include <renderdoc_app.h>
 #include <dlfcn.h>
 #endif
 
-using namespace lsfgvk;
-using namespace lsfgvk::backend;
+using namespace vkbp;
+using namespace vkbp::backend;
 
-namespace lsfgvk::backend {
+namespace vkbp::backend {
     error::error(const std::string& msg, const std::exception& inner)
         : std::runtime_error(msg + "\n- " + inner.what()) {}
     error::error(const std::string& msg)
@@ -62,7 +63,7 @@ namespace lsfgvk::backend {
     class InstanceImpl {
     public:
         /// create an instance
-        /// (see lsfg-vk documentation)
+        /// (see vkb-vk documentation)
         InstanceImpl(vk::PhysicalDeviceSelector selectPhysicalDevice,
             const std::filesystem::path& shaderDllPath,
             bool allowLowPrecision);
@@ -73,7 +74,7 @@ namespace lsfgvk::backend {
         /// get the shader registry
         /// @return the shader registry
         [[nodiscard]] const auto& getShaderRegistry() const { return this->shaders; }
-#ifdef LSFGVK_TESTING_RENDERDOC
+#ifdef VKBPVK_TESTING_RENDERDOC
         /// get the RenderDoc API
         /// @return the RenderDoc API
         [[nodiscard]] const auto& getRenderDocAPI() const { return this->renderdoc; }
@@ -88,7 +89,7 @@ namespace lsfgvk::backend {
         vk::Vulkan vk;
         ShaderRegistry shaders;
 
-#ifdef LSFGVK_TESTING_RENDERDOC
+#ifdef VKBPVK_TESTING_RENDERDOC
         std::optional<RENDERDOC_API_1_6_0> renderdoc;
 #endif
     };
@@ -97,13 +98,13 @@ namespace lsfgvk::backend {
     class ContextImpl {
     public:
         /// create a context
-        /// (see lsfg-vk documentation)
+        /// (see vkb-vk documentation)
         ContextImpl(const InstanceImpl& instance,
             std::pair<int, int> sourceFds, const std::vector<int>& destFds, int syncFd,
             VkExtent2D extent, bool hdr, float flow, bool perf);
 
         /// schedule frames
-        /// (see lsfg-vk documentation)
+        /// (see vkb-vk documentation)
         void scheduleFrames();
     private:
         std::pair<vk::Image, vk::Image> sourceImages;
@@ -112,6 +113,9 @@ namespace lsfgvk::backend {
 
         vk::TimelineSemaphore syncSemaphore; // imported
         vk::TimelineSemaphore prepassSemaphore;
+        // cross-gendor: shared drm_syncobj container from the layer (app GPU).
+        // backend drmWait()s on frame points with zero per-frame IPC.
+        std::optional<vk::DrmSyncTimeline> sharedTimeline;
         size_t idx{1};
         size_t fidx{0}; // real frame index
 
@@ -196,20 +200,29 @@ namespace {
     std::filesystem::path findCacheFilePath() {
         const char* xdgCacheHome = std::getenv("XDG_CACHE_HOME");
         if (xdgCacheHome && *xdgCacheHome != '\0')
-            return std::filesystem::path(xdgCacheHome) / "lsfg-vk_pipeline_cache.bin";
+            return std::filesystem::path(xdgCacheHome) / "vkb-vk_pipeline_cache.bin";
 
         const char* home = std::getenv("HOME");
         if (home && *home != '\0')
-            return std::filesystem::path(home) / ".cache" / "lsfg-vk_pipeline_cache.bin";
+            return std::filesystem::path(home) / ".cache" / "vkb-vk_pipeline_cache.bin";
 
-        return{"/tmp/lsfg-vk_pipeline_cache.bin"};
+        return{"/tmp/vkb-vk_pipeline_cache.bin"};
     }
     /// create a Vulkan instance
     vk::Vulkan createVulkanInstance(vk::PhysicalDeviceSelector selectPhysicalDevice) {
         try {
+            // The backend runs in the SAME process as the game. The game's
+            // VK_INSTANCE_LAYERS=VK_LAYER_VKBPVK_frame_generation is still set in
+            // the environment, so the loader would inject the layer into the
+            // backend's OWN instance too. The layer then intercepts the backend's
+            // vkCreateSwapchainKHR and crashes (access violation) because the
+            // backend has no swapchain of its own. Clear the layer env so the
+            // backend instance is clean.
+            unsetenv("VK_INSTANCE_LAYERS");
+            setenv("DISABLE_VKBPVK", "1", 1);
             return{
-                "lsfg-vk", vk::version{2, 0, 0},
-                "lsfg-vk-engine", vk::version{2, 0, 0},
+                "vkb-vk", vk::version{2, 0, 0},
+                "vkb-vk-engine", vk::version{2, 0, 0},
                 selectPhysicalDevice,
                 false, std::nullopt,
                 findCacheFilePath()
@@ -227,7 +240,7 @@ namespace {
         try {
             resources = backend::extractResourcesFromDLL(shaderDllPath);
         } catch (const std::exception& e) {
-            throw backend::error("Unable to parse Lossless Scaling DLL", e);
+            throw backend::error("Unable to parse VScale DLL", e);
         }
 
         try {
@@ -239,7 +252,7 @@ namespace {
             throw backend::error("Unable to build shader registry", e);
         }
     }
-#ifdef LSFGVK_TESTING_RENDERDOC
+#ifdef VKBPVK_TESTING_RENDERDOC
     /// load RenderDoc integration
     std::optional<RENDERDOC_API_1_6_0> loadRenderDocIntegration() {
         void* module = dlopen("librenderdoc.so", RTLD_NOW | RTLD_NOLOAD);
@@ -267,7 +280,7 @@ InstanceImpl::InstanceImpl(vk::PhysicalDeviceSelector selectPhysicalDevice,
         : vk(createVulkanInstance(selectPhysicalDevice)),
         shaders(createShaderRegistry(this->vk, shaderDllPath,
             allowLowPrecision && vk.supportsFP16())) {
-#ifdef LSFGVK_TESTING_RENDERDOC
+#ifdef VKBPVK_TESTING_RENDERDOC
     this->renderdoc = loadRenderDocIntegration();
 #endif
     vk.persistPipelineCache(); // will silently fail
@@ -406,8 +419,20 @@ ContextImpl::ContextImpl(const InstanceImpl& instance,
         destImages(importImages(instance.getVulkan(), destFds,
             extent, hdr ? VK_FORMAT_R16G16B16A16_SFLOAT : VK_FORMAT_R8G8B8A8_UNORM)),
         blackImage(createBlackImage(instance.getVulkan())),
-        syncSemaphore(importTimelineSemaphore(instance.getVulkan(), syncFd)),
+        syncSemaphore(
+            std::getenv("VKBPVK_CROSS_GPU") != nullptr
+                ? createPrepassSemaphore(instance.getVulkan())   // internal RADV timeline
+                : importTimelineSemaphore(instance.getVulkan(), syncFd)
+        ),
         prepassSemaphore(createPrepassSemaphore(instance.getVulkan())),
+        sharedTimeline(
+            std::getenv("VKBPVK_CROSS_GPU") != nullptr
+                ? std::optional<vk::DrmSyncTimeline>(vk::DrmSyncTimeline::fromFd(
+                    std::getenv("VKBPVK_DRM_NODE")   // must match the app GPU the layer used
+                        ? std::getenv("VKBPVK_DRM_NODE")
+                        : (const char*)"/dev/dri/card1", syncFd))
+                : std::nullopt
+        ),
         cmdbufs(createCommandBuffers(instance.getVulkan(), destFds.size() + 1)),
         cmdbufFence(instance.getVulkan()),
         ctx(createCtx(instance, extent, hdr, flow, perf, destFds.size())),
@@ -549,7 +574,7 @@ ContextImpl::ContextImpl(const InstanceImpl& instance,
 }
 
 void Instance::scheduleFrames(Context& context) { // NOLINT (static)
-#ifdef LSFGVK_TESTING_RENDERDOC
+#ifdef VKBPVK_TESTING_RENDERDOC
     const auto& impl = this->m_impl;
     if (impl->getRenderDocAPI()) {
         impl->getRenderDocAPI()->StartFrameCapture(
@@ -562,7 +587,7 @@ void Instance::scheduleFrames(Context& context) { // NOLINT (static)
     } catch (const std::exception& e) {
         throw backend::error("Unable to schedule frames", e);
     }
-#ifdef LSFGVK_TESTING_RENDERDOC
+#ifdef VKBPVK_TESTING_RENDERDOC
     if (impl->getRenderDocAPI()) {
         impl->getVulkan().df().DeviceWaitIdle(impl->getVulkan().dev());
         impl->getRenderDocAPI()->EndFrameCapture(
@@ -591,8 +616,13 @@ void Context::scheduleFrames() {
     this->beta1.render(ctx.vk, cmdbuf);
 
     cmdbuf.end(ctx.vk);
+    if (this->sharedTimeline.has_value()) {
+        fprintf(stderr, "[vkb] backend wait sharedTimeline idx=%zu\n", this->idx);
+        this->sharedTimeline->wait(this->idx);
+        fprintf(stderr, "[vkb] backend wait DONE idx=%zu\n", this->idx);
+    }
     cmdbuf.submit(this->ctx.vk,
-        {}, this->syncSemaphore.handle(), this->idx,
+        {}, this->sharedTimeline.has_value() ? VK_NULL_HANDLE : this->syncSemaphore.handle(), this->idx,
         {}, this->prepassSemaphore.handle(), this->idx
     );
 
@@ -655,7 +685,7 @@ InstanceImpl::~InstanceImpl() {
     try {
         new vk::Vulkan(std::move(this->vk));
     } catch (...) {
-        std::cerr << "lsfg-vk: failed to leak Vulkan instance\n";
+        std::cerr << "vkb-vk: failed to leak Vulkan instance\n";
     }
 
 }

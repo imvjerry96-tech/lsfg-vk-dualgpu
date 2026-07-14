@@ -6,7 +6,7 @@
 #include <optional>
 #include <string>
 
-namespace lsfgvk::cli::debug {
+namespace vkbp::cli::debug {
 
     /// options for the "debug" command
     struct Options {

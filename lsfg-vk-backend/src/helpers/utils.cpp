@@ -9,8 +9,8 @@
 
 #include <vulkan/vulkan_core.h>
 
-using namespace lsfgvk;
-using namespace lsfgvk::backend;
+using namespace vkbp;
+using namespace vkbp::backend;
 
 ConstantBuffer backend::getDefaultConstantBuffer(
         size_t index, size_t total, float invFlow) {

@@ -28,6 +28,7 @@ namespace vk {
         PFN_vkGetPhysicalDeviceMemoryProperties GetPhysicalDeviceMemoryProperties;
         PFN_vkCreateDevice CreateDevice;
         PFN_vkGetDeviceProcAddr GetDeviceProcAddr;
+        PFN_vkGetInstanceProcAddr GetInstanceProcAddr;
 
         // extension functions
         PFN_vkGetPhysicalDeviceSurfaceCapabilitiesKHR GetPhysicalDeviceSurfaceCapabilitiesKHR;
@@ -70,6 +71,7 @@ namespace vk {
         PFN_vkEndCommandBuffer EndCommandBuffer;
         PFN_vkCmdPipelineBarrier CmdPipelineBarrier;
         PFN_vkCmdBlitImage CmdBlitImage;
+        PFN_vkCmdCopyImage CmdCopyImage;
         PFN_vkCmdClearColorImage CmdClearColorImage;
         PFN_vkCmdBindPipeline CmdBindPipeline;
         PFN_vkCmdBindDescriptorSets CmdBindDescriptorSets;
@@ -124,7 +126,7 @@ namespace vk {
     /// @param graphical whether the device is graphical (rather than compute)
     /// @return initialized function pointers
     VulkanDeviceFuncs initVulkanDeviceFuncs(const VulkanInstanceFuncs& fi, VkDevice device,
-        bool graphical);
+        VkInstance instance, bool graphical);
 
     /// vulkan version wrapper
     class version {

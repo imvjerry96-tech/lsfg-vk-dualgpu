@@ -21,8 +21,8 @@
 #include <stdlib.h>
 #include <vulkan/vulkan_core.h>
 
-using namespace lsfgvk;
-using namespace lsfgvk::layer;
+using namespace vkbp;
+using namespace vkbp::layer;
 
 namespace {
     /// helper function to add required extensions
@@ -52,7 +52,7 @@ Root::Root() {
 
     this->active_profile = profile->second;
 
-    std::cerr << "lsfg-vk: using profile with name '" << this->active_profile->name << "' ";
+    std::cerr << "vkb-vk: using profile with name '" << this->active_profile->name << "' ";
     switch (profile->first) {
         case ls::IdentType::OVERRIDE:
             std::cerr << "(identified via override)\n";
@@ -87,18 +87,7 @@ void Root::modifyInstanceCreateInfo(VkInstanceCreateInfo& createInfo,
     if (!this->active_profile.has_value())
         return;
 
-    auto extensions = add_extensions(
-        createInfo.ppEnabledExtensionNames,
-        createInfo.enabledExtensionCount,
-        {
-            "VK_KHR_get_physical_device_properties2",
-            "VK_KHR_external_memory_capabilities",
-            "VK_KHR_external_semaphore_capabilities"
-        }
-    );
-    createInfo.enabledExtensionCount = static_cast<uint32_t>(extensions.size());
-    createInfo.ppEnabledExtensionNames = extensions.data();
-
+    // TEMP ISOLATION: skip instance extension injection to test if it causes exit 3
     finish();
 }
 
@@ -107,43 +96,32 @@ void Root::modifyDeviceCreateInfo(VkDeviceCreateInfo& createInfo,
     if (!this->active_profile.has_value())
         return;
 
-    auto extensions = add_extensions(
-        createInfo.ppEnabledExtensionNames,
-        createInfo.enabledExtensionCount,
-        {
-            "VK_KHR_external_memory",
-            "VK_KHR_external_memory_fd",
-            "VK_KHR_external_semaphore",
-            "VK_KHR_external_semaphore_fd",
-            "VK_KHR_timeline_semaphore"
-        }
-    );
-    createInfo.enabledExtensionCount = static_cast<uint32_t>(extensions.size());
-    createInfo.ppEnabledExtensionNames = extensions.data();
-
-    bool isFeatureEnabled = false;
-    auto* featureInfo = reinterpret_cast<VkBaseInStructure*>(const_cast<void*>(createInfo.pNext));
-    while (featureInfo) {
-        if (featureInfo->sType == VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_VULKAN_1_2_FEATURES) {
-            auto* features = reinterpret_cast<VkPhysicalDeviceVulkan12Features*>(featureInfo);
-            features->timelineSemaphore = VK_TRUE;
-            isFeatureEnabled = true;
-        } else if (featureInfo->sType == VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_TIMELINE_SEMAPHORE_FEATURES) {
-            auto* features = reinterpret_cast<VkPhysicalDeviceTimelineSemaphoreFeatures*>(featureInfo);
-            features->timelineSemaphore = VK_TRUE;
-            isFeatureEnabled = true;
-        }
-
-        featureInfo = const_cast<VkBaseInStructure*>(featureInfo->pNext);
-    }
-
-    VkPhysicalDeviceTimelineSemaphoreFeatures timelineFeatures{
-        .sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_TIMELINE_SEMAPHORE_FEATURES,
-        .pNext = const_cast<void*>(createInfo.pNext),
-        .timelineSemaphore = VK_TRUE
-    };
-    if (!isFeatureEnabled)
-        createInfo.pNext = &timelineFeatures;
+    // NOTE: we must NOT inject Vulkan device extensions (external_memory_fd,
+    // external_semaphore_fd, timeline_semaphore, ...) into the GAME's
+    // VkDeviceCreateInfo. The game (DX12/vkd3d) does not request them and
+    // vkCreateDevice rejects the unknown/unsupported extensions -> the game
+    // exits (exit code 3) immediately after the layer loads.
+    //
+    // Frame generation needs those extensions only on the BACKEND device, which
+    // the backend opens for itself on the second GPU. So we leave the game
+    // device extensions untouched and let the backend request what it needs.
+    //
+    // We only flip timelineSemaphore to VK_TRUE when the game already has a
+    // matching feature struct in its pNext chain (we never add or overwrite
+    // pNext). This is required for the backend's sync path on some drivers.
+    // TEMP: disabled to test if forcing timelineSemaphore ON breaks vkCreateDevice
+    // bool isFeatureEnabled = false;
+    // auto* featureInfo = reinterpret_cast<VkBaseInStructure*>(const_cast<void*>(createInfo.pNext));
+    // while (featureInfo) {
+    //     if (featureInfo->sType == VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_VULKAN_1_2_FEATURES) {
+    //         reinterpret_cast<VkPhysicalDeviceVulkan12Features*>(featureInfo)->timelineSemaphore = VK_TRUE;
+    //         isFeatureEnabled = true;
+    //     } else if (featureInfo->sType == VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_TIMELINE_SEMAPHORE_FEATURES) {
+    //         reinterpret_cast<VkPhysicalDeviceTimelineSemaphoreFeatures*>(featureInfo)->timelineSemaphore = VK_TRUE;
+    //         isFeatureEnabled = true;
+    //     }
+    //     featureInfo = const_cast<VkBaseInStructure*>(featureInfo->pNext);
+    // }
 
     finish();
 }
@@ -168,12 +146,13 @@ void Root::createSwapchainContext(const vk::Vulkan& vk,
         VkSwapchainKHR swapchain, const SwapchainInfo& info) {
     if (!this->active_profile.has_value())
         throw ls::error("attempted to create swapchain context while layer is inactive");
+    this->engaged = true; // layer is now engaged; frame-gen runs from here on
     const auto& profile = *this->active_profile;
 
     if (!this->backend.has_value()) { // emplace backend late, due to loader bug
         const auto& global = this->config.get().global();
 
-        setenv("DISABLE_LSFGVK", "1", 1);
+        setenv("DISABLE_VKBPVK", "1", 1);
 
         try {
             std::string dll{};
@@ -198,11 +177,11 @@ void Root::createSwapchainContext(const vk::Vulkan& vk,
                 dll, global.allow_fp16
             );
         } catch (const std::exception& e) {
-            unsetenv("DISABLE_LSFGVK");
+            unsetenv("DISABLE_VKBPVK");
             throw ls::error("failed to create backend instance", e);
         }
 
-        unsetenv("DISABLE_LSFGVK");
+        unsetenv("DISABLE_VKBPVK");
     }
 
     this->swapchains.emplace(swapchain,

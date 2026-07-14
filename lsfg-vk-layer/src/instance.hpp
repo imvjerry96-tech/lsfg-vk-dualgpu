@@ -14,18 +14,25 @@
 
 #include <vulkan/vulkan_core.h>
 
-namespace lsfgvk::layer {
+namespace vkbp::layer {
 
-    /// root context of the lsfg-vk layer
+    /// root context of the vkb-vk layer
     class Root {
     public:
-        /// create the lsfg-vk root context
+        /// create the vkb-vk root context
         /// @throws ls::error on failure
         Root();
 
         /// check if the layer is active
         /// @return true if active
-        [[nodiscard]] bool active() const { return this->active_profile.has_value(); }
+        [[nodiscard]] bool active() const { return this->engaged; }
+
+        /// check if a profile matched (layer will engage at first swapchain)
+        /// @return true if a profile is loaded
+        [[nodiscard]] bool profileLoaded() const { return this->active_profile.has_value(); }
+
+        /// check if the layer has engaged (swapchain created)
+        [[nodiscard]] bool engaged_state() const { return this->engaged; }
 
         /// ensure the layer is up-to-date
         /// @return true if the configuration was updated
@@ -72,6 +79,7 @@ namespace lsfgvk::layer {
     private:
         ls::WatchedConfig config;
         std::optional<ls::GameConf> active_profile;
+        bool engaged = false; // becomes true at the first swapchain creation
 
         ls::lazy<backend::Instance> backend;
         std::unordered_map<VkSwapchainKHR, Swapchain> swapchains;

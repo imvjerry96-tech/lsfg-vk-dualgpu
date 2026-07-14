@@ -17,7 +17,7 @@
 
 #include <vulkan/vulkan_core.h>
 
-namespace lsfgvk::backend {
+namespace vkbp::backend {
     /// exposed context data
     struct Ctx {
         ls::R<const vk::Vulkan> vk; // safe back reference

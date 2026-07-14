@@ -13,7 +13,7 @@
 
 #include <vulkan/vulkan_core.h>
 
-namespace lsfgvk::backend {
+namespace vkbp::backend {
 
     /// managed shader handling dispatch and barriers
     /// this class is NOT memory-safe

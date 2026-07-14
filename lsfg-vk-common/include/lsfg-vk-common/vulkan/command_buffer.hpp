@@ -44,6 +44,20 @@ namespace vk {
             std::pair<VkImage, VkImage> images, VkExtent2D extent,
             const std::vector<vk::Barrier>& postBarriers) const;
 
+        /// copy an image to another (LINEAR <-> OPTIMAL safe, no scaling)
+        /// use instead of blitImage when either image is VK_IMAGE_TILING_LINEAR
+        /// (blit requires OPTIMAL tiling on both sides)
+        /// @param vk the vulkan instance
+        /// @param preBarriers image memory barriers to apply before copy
+        /// @param images source and destination images
+        /// @param extent the extent of the copy
+        /// @param postBarriers image memory barriers to apply after copy
+        /// throws ls::vulkan_error on failure
+        void copyImage(const vk::Vulkan& vk,
+            const std::vector<vk::Barrier>& preBarriers,
+            std::pair<VkImage, VkImage> images, VkExtent2D extent,
+            const std::vector<vk::Barrier>& postBarriers) const;
+
         /// insert a bunch of barriers
         /// @param vk the vulkan instance
         /// @param barriers image memory barriers to apply
