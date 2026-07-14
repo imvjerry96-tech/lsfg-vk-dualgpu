@@ -1,31 +1,23 @@
 # lsfg-vk-dualgpu
 
-A modified fork of [PancakeTAS/lsfg-vk](https://github.com/PancakeTAS/lsfg-vk) that adds **dual-GPU frame generation** running natively on **KDE Wayland** — no TTY3 required, no input loss.
-
-## Goal
-
-- **Render GPU:** NVIDIA RTX (game runs normally, anti-tamper bypassed)
-- **Frame-gen GPU:** AMD RX 6600 (runs LSFGVK interpolation + presents to DP-5)
-- **Environment:** KDE Wayland, nested gamescope via Heroic
-- **Input:** works normally (no standalone gamescope)
+A modified fork of [PancakeTAS/lsfg-vk](https://github.com/PancakeTAS/lsfg-vk) that adds **dual-GPU frame generation** running natively on **KDE Wayland** .
 
 ## What was changed
 
 ### 1. Layer null-safe passthrough (`lsfg-vk-layer/src/entrypoint.cpp`)
 - `vkCreateInstance` / `vkCreateDevice` / `vkCreateSwapchainKHR` / `vkQueuePresentKHR` have null-guards
-- When no profile is loaded → clean passthrough (no gamescope crash, no `-3` error)
 - Device is registered correctly into the loader chain (fixes "Bad destination in trampoline dispatch" + `vkSignalSemaphoreKHR -3`)
 
 ### 2. Anti-tamper bypass
 - The layer loads into the **gamescope** process (outer), NOT into the game (inner)
-- The game (Cyberpunk 2077 RUNE) does not see the injected module → no exit code 3
-- Game runs at RTX 100%, no segfault
+- The game does not see the injected module → no exit code 3
+- Gpus runs at 100% usage, no segfault
 
 ### 3. Cross-GPU DRM syncobj (`lsfg-vk-common`)
 - New `drm_syncobj.cpp/hpp`: shares a syncobj between two GPUs via DMA-BUF
-- `VKBPVK_DRM_NODE` = renderD128 (the RTX app GPU) so the LSFGVK backend (AMD) syncs correctly
+- `VKBPVK_DRM_NODE` = renderD128 so the LSFGVK backend (AMD) syncs correctly
 
-### 4. Nested gamescope config (Heroic)
+### 4. Example Nested gamescope config (Heroic)
 - `windowType: windowed` + `enableForceGrabCursor: true` → input stays alive (Wayland does not allow nested keyboard grab)
 - `--prefer-vk-device 1002:73ff` → gamescope selects the RX 6600 as its Vulkan device
 - `VK_INSTANCE_LAYERS=VK_LAYER_LSFGVK_frame_generation` (NO device_select, NO VK_DEVICE_SELECT)
